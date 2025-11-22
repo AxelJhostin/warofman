@@ -1,3 +1,5 @@
+/*
+//No lo usaremos por el momento
 package com.negocio.warofmen.viewmodel
 
 import android.app.Application
@@ -244,3 +246,5 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         saveAndUpdate(updatedPlayer)
     }
 }
+
+ */

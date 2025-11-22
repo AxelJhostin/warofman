@@ -15,10 +15,10 @@ import androidx.compose.ui.unit.dp
 import com.negocio.warofmen.componentes.LevelUpDialog // Importante: Importar el nuevo componente
 import com.negocio.warofmen.componentes.QuestCard
 import com.negocio.warofmen.componentes.XpProgressBar
-import com.negocio.warofmen.viewmodel.GameViewModel
+import com.negocio.warofmen.viewmodel.HomeViewModel
 
 @Composable
-fun PantallaJuego(viewModel: GameViewModel) {
+fun PantallaJuego(viewModel: HomeViewModel) {
     // 1. Observamos los estados del ViewModel
     val gameState by viewModel.gameState.collectAsState()
     val quests by viewModel.quests.collectAsState()
@@ -27,7 +27,7 @@ fun PantallaJuego(viewModel: GameViewModel) {
     // 2. Lógica del Diálogo (Se sobrepone a la UI cuando es true)
     if (showLevelUp) {
         LevelUpDialog(level = gameState.level) {
-            viewModel.dismissLevelUpDialog()
+            viewModel.dismissDialog()
         }
     }
 

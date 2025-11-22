@@ -8,10 +8,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.negocio.warofmen.viewmodel.GameViewModel
+import com.negocio.warofmen.viewmodel.CreationViewModel
 
 @Composable
-fun PantallaCreacion(viewModel: GameViewModel) {
+fun PantallaCreacion(viewModel: CreationViewModel,
+                     onFinished: () -> Unit) {
     var nombre by remember { mutableStateOf("") }
     var peso by remember { mutableStateOf("") }
     var altura by remember { mutableStateOf("") }
@@ -72,7 +73,9 @@ fun PantallaCreacion(viewModel: GameViewModel) {
                 val w = peso.toFloatOrNull() ?: 70f
                 val h = altura.toFloatOrNull() ?: 170f
                 val a = edad.toIntOrNull() ?: 25
-                viewModel.createCharacter(nombre, w, h, a, genero)
+                viewModel.createCharacter(nombre, w, h, a, genero) {
+                    onFinished() // Avisamos al MainActivity que termine
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = nombre.isNotEmpty() && peso.isNotEmpty() && altura.isNotEmpty()
