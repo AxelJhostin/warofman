@@ -7,6 +7,7 @@ import com.negocio.warofmen.dato.GameRepository
 import com.negocio.warofmen.dato.PlayerCharacter
 import com.negocio.warofmen.dato.Quest
 import com.negocio.warofmen.dato.QuestProvider
+import com.negocio.warofmen.util.GameUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,31 +38,60 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun completeQuest(quest: Quest) {
-        val current = _gameState.value
-        // Lógica de XP y Stats (Resumida para el ejemplo, usa la lógica completa anterior)
-        var newXp = current.currentXp + quest.xpReward
-        var newLvl = current.level
-        var max = current.maxXp
 
-        // ... (Aplica aquí tu lógica de stats Str, Sta, Agi, Wil, Luk igual que antes) ...
-        // NOTA: Copia la lógica exacta de los "when(quest.statBonus)" que hicimos antes.
+        val context = getApplication<Application>().applicationContext
+        val currentPlayer = _gameState.value
 
-        // Simulación rápida para no llenar pantalla:
-        val newStr = if(quest.statBonus=="STR") current.strength+1 else current.strength
-        // ... resto de stats ...
+        // 1. Solo sumamos XP (Ya no stats inmediatos)
+        var newXp = currentPlayer.currentXp + quest.xpReward
+        var newLevel = currentPlayer.level
+        var newMaxXp = currentPlayer.maxXp
 
+        // Stats actuales (se mantienen igual por ahora)
+        var newStr = currentPlayer.strength
+        var newSta = currentPlayer.stamina
+        var newAgi = currentPlayer.agility
+        var newWil = currentPlayer.willpower
+        var newLuk = currentPlayer.luck
+
+        // 2. Comprobamos si sube de nivel (AQUÍ es donde suben los stats)
         var leveledUp = false
-        if (newXp >= max) {
-            newXp -= max; newLvl += 1; max = (max * 1.2).toInt()
+        if (newXp >= newMaxXp) {
+            newXp -= newMaxXp
+            newLevel += 1
+            newMaxXp = (newMaxXp * 1.2).toInt()
+
+            // BONUS DE LEVEL UP: ¡Aquí está el premio gordo!
+            // Subimos +1 a todo (Representa que tu cuerpo mejora en general)
+            newStr += 1
+            newSta += 1
+            newAgi += 1
+            newWil += 1
+            // La suerte la dejamos igual o la subes si quieres
+
             leveledUp = true
         }
 
-        val updated = current.copy(level = newLvl, currentXp = newXp, maxXp = max, strength = newStr) // Agrega las demás
+        // 3. Guardamos
+        val updatedPlayer = currentPlayer.copy(
+            currentXp = newXp,
+            level = newLevel,
+            maxXp = newMaxXp,
+            strength = newStr,
+            stamina = newSta,
+            agility = newAgi,
+            willpower = newWil,
+            luck = newLuk
+        )
 
-        updatePlayer(updated)
+        updatePlayer(updatedPlayer)
+
         if (leveledUp) {
+            GameUtils.vibrate(context, "levelup") // Vibración épica
             _showLevelUpDialog.value = true
-            loadQuests(newLvl)
+            loadQuests(newLevel)
+        } else {
+            GameUtils.vibrate(context, "success") // Vibración normal
         }
     }
 

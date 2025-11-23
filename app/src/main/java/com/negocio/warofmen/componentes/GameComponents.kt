@@ -1,52 +1,77 @@
 package com.negocio.warofmen.componentes
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.negocio.warofmen.dato.Quest
+import com.negocio.warofmen.ui.theme.* // Importamos tus colores RPG
+import com.negocio.warofmen.util.GameUtils
 
-// 1. Barra de Experiencia (XP) estilo RPG
+// 1. Barra de Experiencia (XP) estilo HUD
 @Composable
 fun XpProgressBar(currentXp: Int, maxXp: Int, level: Int) {
-    Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = "Nivel $level", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            Text(text = "$currentXp / $maxXp XP", style = MaterialTheme.typography.bodySmall)
+            Text("LVL $level", fontWeight = FontWeight.ExtraBold, color = RpgNeonCyan, fontSize = 16.sp)
+            Text("$currentXp / $maxXp XP", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        LinearProgressIndicator(
-            progress = { currentXp.toFloat() / maxXp.toFloat() },
-            modifier = Modifier.fillMaxWidth().height(10.dp),
-            color = Color(0xFF4CAF50), // Verde RPG
-            trackColor = Color.LightGray,
-        )
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Barra con efecto visual
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(14.dp)
+                .clip(CutCornerShape(bottomEnd = 8.dp))
+                .background(Color.Black)
+                .border(1.dp, Color.DarkGray, CutCornerShape(bottomEnd = 8.dp))
+        ) {
+            val progress = (currentXp.toFloat() / maxXp.toFloat()).coerceIn(0f, 1f)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .fillMaxHeight()
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(XpBarGreen.copy(alpha = 0.6f), XpBarGreen)
+                        )
+                    )
+            )
+        }
     }
 }
 
-// 2. Tarjeta de Misión (Quest Card)
+// 2. Tarjeta de Misión (Quest Card) Estilo RPG
 @Composable
 fun QuestCard(quest: Quest, onComplete: () -> Unit) {
-    // Detectamos si es una misión de tiempo buscando la palabra "segundos" en la descripción
-    // (Esto es un hack rápido para el MVP, idealmente tendríamos un campo 'type' en la clase Quest)
-    val isTimeQuest = quest.description.contains("segundos")
-
-    // Estado del temporizador
-    var timeLeft by remember { mutableStateOf(if (isTimeQuest) extractSeconds(quest.description) else 0) }
+    val isTimeQuest = quest.description.contains("segundos") || quest.description.contains("Wall-sit")
+    var timeLeft by remember { mutableStateOf(if (isTimeQuest) GameUtils.extractSeconds(quest.description) else 0) }
     var isTimerRunning by remember { mutableStateOf(false) }
+
+    // Determinar color según el Stat que mejora
+    val questColor = when(quest.statBonus) {
+        "STR" -> StatStrength
+        "AGI" -> StatAgility
+        "STA" -> StatStamina
+        "WIL" -> StatWillpower
+        "LUK" -> StatLuck
+        else -> Color.White
+    }
 
     // Lógica del cronómetro
     LaunchedEffect(key1 = isTimerRunning, key2 = timeLeft) {
@@ -55,36 +80,61 @@ fun QuestCard(quest: Quest, onComplete: () -> Unit) {
             timeLeft--
         } else if (isTimerRunning && timeLeft == 0) {
             isTimerRunning = false
-            onComplete() // Auto-completar cuando termina el tiempo
+            onComplete() // Auto-completar
         }
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            .padding(vertical = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = RpgPanel), // Fondo gris oscuro
+        shape = RoundedCornerShape(8.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, questColor.copy(alpha = 0.5f)) // Borde del color del stat
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = quest.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Badge(containerColor = Color(0xFFFFC107)) {
-                    Text(text = "+${quest.xpReward} XP", color = Color.Black, modifier = Modifier.padding(4.dp))
+                Text(
+                    text = quest.title.uppercase(),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
+
+                // Badge de XP
+                Surface(
+                    color = XpBadgeGold.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(4.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, XpBadgeGold)
+                ) {
+                    Text(
+                        text = "+${quest.xpReward} XP",
+                        color = XpBadgeGold,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
                 }
             }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = quest.description, style = MaterialTheme.typography.bodyMedium)
-            Spacer(modifier = Modifier.height(8.dp))
 
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = quest.description, color = Color.LightGray, fontSize = 13.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Footer: Stat Bonus y Botón
             Row(verticalAlignment = Alignment.CenterVertically) {
+
+                // CAMBIO AQUÍ: Ya no dice "RECOMPENSA: +1", ahora dice "TIPO DE ENTRENAMIENTO"
                 Text(
-                    text = "Bonus: ${quest.statBonus}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.Gray,
+                    text = "TIPO: ${quest.statBonus}", // Ej: TIPO: STR
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = questColor,
                     modifier = Modifier.weight(1f)
                 )
 
@@ -92,14 +142,21 @@ fun QuestCard(quest: Quest, onComplete: () -> Unit) {
                     Button(
                         onClick = { isTimerRunning = !isTimerRunning },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isTimerRunning) Color.Red else MaterialTheme.colorScheme.primary
-                        )
+                            containerColor = if (isTimerRunning) Color.Red else questColor
+                        ),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                        modifier = Modifier.height(36.dp)
                     ) {
-                        Text(if (timeLeft == 0) "¡Hecho!" else if (isTimerRunning) "$timeLeft s" else "Iniciar Crono")
+                        Text(if (timeLeft == 0) "¡HECHO!" else if (isTimerRunning) "${timeLeft}s" else "INICIAR")
                     }
                 } else {
-                    Button(onClick = onComplete) {
-                        Text("Completar")
+                    Button(
+                        onClick = onComplete,
+                        colors = ButtonDefaults.buttonColors(containerColor = questColor),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Text("COMPLETAR")
                     }
                 }
             }
@@ -107,40 +164,39 @@ fun QuestCard(quest: Quest, onComplete: () -> Unit) {
     }
 }
 
-// Función auxiliar pequeña para sacar el número de la descripción (ej: "Aguanta 10 segundos" -> 10)
-fun extractSeconds(description: String): Int {
-    val number = description.filter { it.isDigit() }
-    return if (number.isNotEmpty()) number.toInt() else 10
-}
-
+// 3. Diálogo de Level Up (Mantenemos la lógica, mejoramos colores)
 @Composable
 fun LevelUpDialog(level: Int, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
+        containerColor = RpgPanel,
         title = {
             Text(
-                text = "¡SUBIDA DE NIVEL!",
+                text = "¡LEVEL UP!",
                 fontWeight = FontWeight.ExtraBold,
-                color = Color(0xFFE91E63), // Un color rosado/rojo intenso
-                fontSize = 24.sp
+                color = RpgNeonCyan,
+                fontSize = 24.sp,
+                modifier = Modifier.fillMaxWidth()
             )
         },
         text = {
             Column {
-                Text("¡Felicidades! Has alcanzado el Nivel $level.")
+                Text("¡Has alcanzado el Nivel $level!", color = Color.White)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Tus estadísticas han aumentado.")
-                Text("¡Los enemigos (ejercicios) ahora son más fuertes!")
+                Text("Todos tus atributos han aumentado +1.", color = Color.LightGray)
+                Text("Nuevas misiones desbloqueadas.", color = Color.Gray, fontSize = 12.sp)
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("¡A SEGUIR!")
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = RpgNeonCyan)
+            ) {
+                Text("CONTINUAR", color = Color.Black, fontWeight = FontWeight.Bold)
             }
         },
         icon = {
-            // Usamos un texto grande como icono por simplicidad
-            Text("⭐", fontSize = 40.sp)
+            Text("⬆️", fontSize = 40.sp)
         }
     )
 }
