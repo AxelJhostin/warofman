@@ -29,6 +29,7 @@ class GameStorage(private val context: Context) {
         val WIL_KEY = intPreferencesKey("user_wil") // Nuevo
         val LUK_KEY = intPreferencesKey("user_luk")
         val WEIGHT_HISTORY_KEY = stringSetPreferencesKey("user_weight_history")
+        val WORKOUT_LOGS_KEY = stringSetPreferencesKey("user_workout_logs")
     }
 
     val getUserFlow: Flow<PlayerCharacter> = context.dataStore.data
@@ -49,7 +50,8 @@ class GameStorage(private val context: Context) {
                 weight = preferences[WEIGHT_KEY] ?: 70f,
                 height = preferences[HEIGHT_KEY] ?: 170f,
                 bmi = preferences[BMI_KEY] ?: 24.2f,
-                weightHistory = preferences[WEIGHT_HISTORY_KEY]?.toList() ?: emptyList()
+                weightHistory = preferences[WEIGHT_HISTORY_KEY]?.toList() ?: emptyList(),
+                workoutLogs = preferences[WORKOUT_LOGS_KEY]?.toList() ?: emptyList()
             )
         }
 
@@ -71,6 +73,7 @@ class GameStorage(private val context: Context) {
             preferences[WIL_KEY] = player.willpower
             preferences[LUK_KEY] = player.luck
             preferences[WEIGHT_HISTORY_KEY] = player.weightHistory.toSet()
+            preferences[WORKOUT_LOGS_KEY] = player.workoutLogs.toSet()
         }
     }
 }

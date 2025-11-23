@@ -4,10 +4,14 @@ import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,6 +27,7 @@ import com.negocio.warofmen.util.GameViewModelFactory
 import com.negocio.warofmen.viewmodel.CreationViewModel
 import com.negocio.warofmen.viewmodel.HomeViewModel
 import com.negocio.warofmen.vista.PantallaCreacion
+import com.negocio.warofmen.vista.PantallaEntrenamiento
 import com.negocio.warofmen.vista.PantallaEstadisticas
 import com.negocio.warofmen.vista.PantallaJuego
 
@@ -40,12 +45,11 @@ class MainActivity : ComponentActivity() {
                     val app = context.applicationContext as Application
                     val factory = GameViewModelFactory(app)
 
-                    // 2. Instanciamos el ViewModel Principal aquí para compartirlo entre Home y Stats
+                    // 2. Instanciamos el ViewModel Principal aquí para compartirlo entre Home, Stats y Workout
                     val homeViewModel: HomeViewModel = viewModel(factory = factory)
                     val gameState by homeViewModel.gameState.collectAsState()
 
                     // 3. SISTEMA DE NAVEGACIÓN
-                    // Iniciamos siempre en HOME. Si no hay usuario, Home nos redirige a Creation.
                     NavHost(
                         navController = navController,
                         startDestination = AppScreens.Home.route
@@ -64,22 +68,24 @@ class MainActivity : ComponentActivity() {
 
                             // Si existe personaje, mostramos el juego
                             if (gameState.isCreated) {
-                                // Usamos un Scaffold simple aquí o dentro de la pantalla
-                                // Para mantener la lógica de navegación limpia, pasamos la acción de ir a stats
-                                androidx.compose.material3.Scaffold(
+                                Scaffold(
                                     floatingActionButton = {
-                                        androidx.compose.material3.FloatingActionButton(
+                                        FloatingActionButton(
                                             onClick = { navController.navigate(AppScreens.Stats.route) },
                                             containerColor = MaterialTheme.colorScheme.primary
                                         ) {
-                                            androidx.compose.material3.Text("📊")
+                                            Text("📊")
                                         }
                                     }
                                 ) { padding ->
-                                    androidx.compose.foundation.layout.Box(
-                                        modifier = androidx.compose.ui.Modifier.padding(padding)
-                                    ) {
-                                        PantallaJuego(viewModel = homeViewModel)
+                                    Box(modifier = Modifier.padding(padding)) {
+                                        PantallaJuego(
+                                            viewModel = homeViewModel,
+                                            onStartQuest = {
+                                                // Cuando el usuario selecciona una misión, vamos a la pantalla de entrenamiento
+                                                navController.navigate(AppScreens.Workout.route)
+                                            }
+                                        )
                                     }
                                 }
                             }
@@ -87,13 +93,11 @@ class MainActivity : ComponentActivity() {
 
                         // --- RUTA: PANTALLA DE CREACIÓN ---
                         composable(AppScreens.Creation.route) {
-                            // Instanciamos el ViewModel de creación solo cuando se necesita
                             val creationViewModel: CreationViewModel = viewModel(factory = factory)
 
                             PantallaCreacion(
                                 viewModel = creationViewModel,
                                 onFinished = {
-                                    // Al terminar, vamos al Home y borramos la pantalla de creación del historial
                                     navController.navigate(AppScreens.Home.route) {
                                         popUpTo(AppScreens.Creation.route) { inclusive = true }
                                     }
@@ -104,10 +108,22 @@ class MainActivity : ComponentActivity() {
                         // --- RUTA: PANTALLA DE ESTADÍSTICAS ---
                         composable(AppScreens.Stats.route) {
                             PantallaEstadisticas(
-                                player = gameState, // Usamos el estado del homeViewModel compartido
+                                player = gameState,
                                 onBack = { navController.popBackStack() },
                                 onUpdateWeight = { newWeight ->
                                     homeViewModel.updateWeight(newWeight)
+                                }
+                            )
+                        }
+
+                        // --- RUTA: PANTALLA DE ENTRENAMIENTO (NUEVA) ---
+                        composable(AppScreens.Workout.route) {
+                            PantallaEntrenamiento(
+                                viewModel = homeViewModel,
+                                onNavigateBack = {
+                                    // Limpiamos la misión activa y volvemos atrás
+                                    homeViewModel.clearActiveQuest()
+                                    navController.popBackStack()
                                 }
                             )
                         }

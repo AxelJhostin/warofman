@@ -16,6 +16,17 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val _activeQuest = MutableStateFlow<Quest?>(null)
+    val activeQuest: StateFlow<Quest?> = _activeQuest.asStateFlow()
+
+    fun selectQuest(quest: Quest) {
+        _activeQuest.value = quest
+    }
+
+    fun clearActiveQuest() {
+        _activeQuest.value = null
+    }
+
     private val repository = GameRepository(application)
 
     // Estados
@@ -54,6 +65,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         var newWil = currentPlayer.willpower
         var newLuk = currentPlayer.luck
 
+        val totalVolume = quest.sets.sum()
+        val logEntry = "${quest.id}:${System.currentTimeMillis()}:$totalVolume"
+        val newWorkoutLogs = currentPlayer.workoutLogs.toMutableList()
+        newWorkoutLogs.add(logEntry)
+
         // 2. Comprobamos si sube de nivel (AQUÍ es donde suben los stats)
         var leveledUp = false
         if (newXp >= newMaxXp) {
@@ -81,7 +97,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             stamina = newSta,
             agility = newAgi,
             willpower = newWil,
-            luck = newLuk
+            luck = newLuk,
+            workoutLogs = newWorkoutLogs
         )
 
         updatePlayer(updatedPlayer)

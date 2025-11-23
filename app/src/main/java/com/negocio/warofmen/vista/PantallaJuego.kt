@@ -21,11 +21,16 @@ import com.negocio.warofmen.ui.theme.RpgPanel
 import com.negocio.warofmen.viewmodel.HomeViewModel
 
 @Composable
-fun PantallaJuego(viewModel: HomeViewModel) {
+fun PantallaJuego(
+    viewModel: HomeViewModel,
+    onStartQuest: () -> Unit // Parámetro nuevo para navegar al entrenamiento
+) {
+    // Observamos los datos
     val gameState by viewModel.gameState.collectAsState()
     val quests by viewModel.quests.collectAsState()
     val showLevelUp by viewModel.showLevelUpDialog.collectAsState()
 
+    // Diálogo de Nivel Subido
     if (showLevelUp) {
         LevelUpDialog(level = gameState.level) {
             viewModel.dismissDialog()
@@ -35,15 +40,16 @@ fun PantallaJuego(viewModel: HomeViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(RpgBackground) // Fondo principal oscuro
+            .background(RpgBackground) // Fondo oscuro global
     ) {
-        // 1. HEADER (Panel de Estado)
+        // 1. HEADER (Panel de Estado del Personaje)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(RpgPanel) // Fondo del panel superior un poco más claro
+                .background(RpgPanel) // Fondo del panel superior
                 .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp)
         ) {
+            // Fila: Nombre y Clase
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -64,17 +70,18 @@ fun PantallaJuego(viewModel: HomeViewModel) {
                         letterSpacing = 2.sp
                     )
                 }
+                // Aquí podrías poner el Nivel en grande si quisieras
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Barra de XP
+            // Barra de XP visual
             XpProgressBar(gameState.currentXp, gameState.maxXp, gameState.level)
         }
 
-        // 2. LISTA DE MISIONES
+        // 2. LISTA DE MISIONES (ENTRENAMIENTOS)
         Text(
-            text = "MISIONES DISPONIBLES",
+            text = "ENTRENAMIENTOS DISPONIBLES",
             style = MaterialTheme.typography.labelLarge,
             color = Color.Gray,
             fontWeight = FontWeight.Bold,
@@ -83,12 +90,19 @@ fun PantallaJuego(viewModel: HomeViewModel) {
 
         LazyColumn(
             modifier = Modifier.padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(bottom = 80.dp) // Espacio para el botón flotante
+            contentPadding = PaddingValues(bottom = 80.dp) // Espacio extra abajo para que el botón flotante no tape la última tarjeta
         ) {
             items(quests) { quest ->
-                QuestCard(quest = quest, onComplete = {
-                    viewModel.completeQuest(quest)
-                })
+                // Usamos la QuestCard que ya diseñamos
+                QuestCard(
+                    quest = quest,
+                    onComplete = {
+                        // AQUÍ ESTÁ LA MAGIA:
+                        // En lugar de "completar" ya, seleccionamos la quest y vamos a la pantalla naranja
+                        viewModel.selectQuest(quest)
+                        onStartQuest()
+                    }
+                )
             }
         }
     }
