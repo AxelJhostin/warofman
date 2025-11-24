@@ -1,8 +1,6 @@
 package com.negocio.warofmen.vista
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,15 +13,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.negocio.warofmen.componentes.ClassSelectionCard // Importamos el componente
 import com.negocio.warofmen.ui.theme.*
 import com.negocio.warofmen.viewmodel.CreationViewModel
 
@@ -98,7 +95,7 @@ fun PantallaCreacion(
         Spacer(modifier = Modifier.height(8.dp))
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            // Tarjeta Guerrero
+            // Tarjeta Guerrero (Componente Importado)
             ClassSelectionCard(
                 title = "GUERRERO",
                 bonus = "+2 Fuerza\n+1 Resistencia",
@@ -109,11 +106,11 @@ fun PantallaCreacion(
                 modifier = Modifier.weight(1f).padding(end = 8.dp)
             )
 
-            // Tarjeta Amazona
+            // Tarjeta Amazona (Componente Importado)
             ClassSelectionCard(
                 title = "AMAZONA",
                 bonus = "+2 Agilidad\n+1 Voluntad",
-                icon = Icons.Default.Face, // Puedes cambiar iconos luego
+                icon = Icons.Default.Face,
                 isSelected = genero == "M",
                 color = StatAgility, // Verde
                 onClick = { genero = "M" },
@@ -188,56 +185,6 @@ fun PantallaCreacion(
                 text = "COMENZAR AVENTURA",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-// COMPONENTE PERSONALIZADO: Tarjeta de Selección de Clase
-@Composable
-fun ClassSelectionCard(
-    title: String,
-    bonus: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    color: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val borderColor = if (isSelected) color else Color.DarkGray
-    val containerColor = if (isSelected) color.copy(alpha = 0.15f) else RpgPanel
-
-    Box(
-        modifier = modifier
-            .height(140.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(containerColor)
-            .border(2.dp, borderColor, RoundedCornerShape(12.dp))
-            .clickable { onClick() }
-            .padding(12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (isSelected) color else Color.Gray,
-                modifier = Modifier.size(40.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = title,
-                color = if (isSelected) Color.White else Color.Gray,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = bonus,
-                color = if (isSelected) color else Color.Gray,
-                fontSize = 11.sp,
-                textAlign = TextAlign.Center,
-                lineHeight = 14.sp
             )
         }
     }
