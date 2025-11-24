@@ -29,6 +29,7 @@ import com.negocio.warofmen.viewmodel.HomeViewModel
 import com.negocio.warofmen.vista.PantallaCreacion
 import com.negocio.warofmen.vista.PantallaEntrenamiento
 import com.negocio.warofmen.vista.PantallaEstadisticas
+import com.negocio.warofmen.vista.PantallaGraficos
 import com.negocio.warofmen.vista.PantallaJuego
 
 class MainActivity : ComponentActivity() {
@@ -39,37 +40,31 @@ class MainActivity : ComponentActivity() {
             WarOfMenTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
 
-                    // 1. Configuración Inicial
                     val navController = rememberNavController()
                     val context = LocalContext.current
                     val app = context.applicationContext as Application
                     val factory = GameViewModelFactory(app)
 
-                    // 2. Instanciamos el ViewModel Principal aquí para compartirlo entre Home, Stats y Workout
                     val homeViewModel: HomeViewModel = viewModel(factory = factory)
                     val gameState by homeViewModel.gameState.collectAsState()
 
-                    // 3. SISTEMA DE NAVEGACIÓN
                     NavHost(
                         navController = navController,
                         startDestination = AppScreens.Home.route
                     ) {
 
-                        // --- RUTA: PANTALLA DE JUEGO (HOME) ---
+                        // --- HOME ---
                         composable(AppScreens.Home.route) {
-                            // Verificación de seguridad: Si no hay personaje, ir a Creación
                             LaunchedEffect(gameState.isCreated) {
                                 if (!gameState.isCreated) {
-                                    navController.navigate(AppScreens.Creation.route) {
-                                        popUpTo(0) // Borra el historial para no volver atrás
-                                    }
+                                    navController.navigate(AppScreens.Creation.route) { popUpTo(0) }
                                 }
                             }
 
-                            // Si existe personaje, mostramos el juego
                             if (gameState.isCreated) {
                                 Scaffold(
                                     floatingActionButton = {
+                                        // Un solo botón limpio para ir a ver las stats
                                         FloatingActionButton(
                                             onClick = { navController.navigate(AppScreens.Stats.route) },
                                             containerColor = MaterialTheme.colorScheme.primary
@@ -81,20 +76,35 @@ class MainActivity : ComponentActivity() {
                                     Box(modifier = Modifier.padding(padding)) {
                                         PantallaJuego(
                                             viewModel = homeViewModel,
-                                            onStartQuest = {
-                                                // Cuando el usuario selecciona una misión, vamos a la pantalla de entrenamiento
-                                                navController.navigate(AppScreens.Workout.route)
-                                            }
+                                            onStartQuest = { navController.navigate(AppScreens.Workout.route) }
                                         )
                                     }
                                 }
                             }
                         }
 
-                        // --- RUTA: PANTALLA DE CREACIÓN ---
+                        // --- STATS (Con botón a Charts) ---
+                        composable(AppScreens.Stats.route) {
+                            PantallaEstadisticas(
+                                player = gameState,
+                                onBack = { navController.popBackStack() },
+                                onUpdateWeight = { w -> homeViewModel.updateWeight(w) },
+                                onNavigateToCharts = { navController.navigate(AppScreens.Charts.route) }
+                            )
+                        }
+
+                        // --- CHARTS (Gráficas de ejercicio) ---
+                        composable(AppScreens.Charts.route) {
+                            PantallaGraficos(
+                                workoutLogs = gameState.workoutLogs,
+                                level = gameState.level,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // --- OTRAS PANTALLAS ---
                         composable(AppScreens.Creation.route) {
                             val creationViewModel: CreationViewModel = viewModel(factory = factory)
-
                             PantallaCreacion(
                                 viewModel = creationViewModel,
                                 onFinished = {
@@ -105,23 +115,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // --- RUTA: PANTALLA DE ESTADÍSTICAS ---
-                        composable(AppScreens.Stats.route) {
-                            PantallaEstadisticas(
-                                player = gameState,
-                                onBack = { navController.popBackStack() },
-                                onUpdateWeight = { newWeight ->
-                                    homeViewModel.updateWeight(newWeight)
-                                }
-                            )
-                        }
-
-                        // --- RUTA: PANTALLA DE ENTRENAMIENTO (NUEVA) ---
                         composable(AppScreens.Workout.route) {
                             PantallaEntrenamiento(
                                 viewModel = homeViewModel,
                                 onNavigateBack = {
-                                    // Limpiamos la misión activa y volvemos atrás
                                     homeViewModel.clearActiveQuest()
                                     navController.popBackStack()
                                 }

@@ -28,26 +28,27 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// --- COLORES Y ESTILOS RPG ---
-val DarkBackground = Color(0xFF121212)
-val PanelBackground = Color(0xFF1E1E1E)
-val GraphLineColor = Color(0xFF00E5FF) // Cian Neon para la gráfica
-val StatStrColor = Color(0xFFF44336)   // Rojo
-val StatAgiColor = Color(0xFF4CAF50)   // Verde
-val StatStaColor = Color(0xFFFFC107)   // Amarillo
-val StatWilColor = Color(0xFF2196F3)   // Azul
-val StatLukColor = Color(0xFF9C27B0)   // Morado
+// --- COLORES Y ESTILOS LOCALES PARA ESTA PANTALLA ---
+val DarkBackgroundLocal = Color(0xFF121212)
+val PanelBackgroundLocal = Color(0xFF1E1E1E)
+val GraphLineColorLocal = Color(0xFF00E5FF) // Cian Neon
+val StatStrColorLocal = Color(0xFFF44336)   // Rojo
+val StatAgiColorLocal = Color(0xFF4CAF50)   // Verde
+val StatStaColorLocal = Color(0xFFFFC107)   // Amarillo
+val StatWilColorLocal = Color(0xFF2196F3)   // Azul
+val StatLukColorLocal = Color(0xFF9C27B0)   // Morado
 
 @Composable
 fun PantallaEstadisticas(
     player: PlayerCharacter,
     onBack: () -> Unit,
-    onUpdateWeight: (Float) -> Unit
+    onUpdateWeight: (Float) -> Unit,
+    onNavigateToCharts: () -> Unit
 ) {
     // Estado para mostrar/ocultar el diálogo de peso
     var showWeightDialog by remember { mutableStateOf(false) }
 
-    // Lógica del Popup
+    // Lógica del Popup de Peso
     if (showWeightDialog) {
         WeightUpdateDialog(
             onDismiss = { showWeightDialog = false },
@@ -61,7 +62,7 @@ fun PantallaEstadisticas(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkBackground) // Fondo oscuro "Gamer"
+            .background(DarkBackgroundLocal) // Fondo oscuro
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
@@ -88,22 +89,31 @@ fun PantallaEstadisticas(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(2.dp, Color.DarkGray, RoundedCornerShape(8.dp))
-                .background(PanelBackground, RoundedCornerShape(8.dp))
+                .background(PanelBackgroundLocal, RoundedCornerShape(8.dp))
                 .padding(16.dp)
         ) {
             Column {
                 // Nombre y Nivel
-                Text(player.name.uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                Text("Nivel ${player.level} ${player.gender}", color = Color.LightGray, fontSize = 14.sp)
+                Text(
+                    text = player.name.uppercase(),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp
+                )
+                Text(
+                    text = "Nivel ${player.level} ${player.gender}",
+                    color = Color.LightGray,
+                    fontSize = 14.sp
+                )
 
                 Divider(color = Color.DarkGray, modifier = Modifier.padding(vertical = 12.dp))
 
                 // Barras de Atributos
-                RpgStatBar("FUERZA (STR)", player.strength, StatStrColor)
-                RpgStatBar("AGILIDAD (AGI)", player.agility, StatAgiColor)
-                RpgStatBar("RESISTENCIA (STA)", player.stamina, StatStaColor)
-                RpgStatBar("VOLUNTAD (WIL)", player.willpower, StatWilColor)
-                RpgStatBar("SUERTE (LUK)", player.luck, StatLukColor)
+                RpgStatBar("FUERZA (STR)", player.strength, StatStrColorLocal)
+                RpgStatBar("AGILIDAD (AGI)", player.agility, StatAgiColorLocal)
+                RpgStatBar("RESISTENCIA (STA)", player.stamina, StatStaColorLocal)
+                RpgStatBar("VOLUNTAD (WIL)", player.willpower, StatWilColorLocal)
+                RpgStatBar("SUERTE (LUK)", player.luck, StatLukColorLocal)
             }
         }
 
@@ -115,12 +125,17 @@ fun PantallaEstadisticas(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("HISTORIAL DE PESO", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "HISTORIAL DE PESO",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
+            )
 
             // Botón flotante pequeño para añadir peso
             SmallFloatingActionButton(
                 onClick = { showWeightDialog = true },
-                containerColor = GraphLineColor,
+                containerColor = GraphLineColorLocal,
                 contentColor = Color.Black
             ) {
                 Text("+", fontWeight = FontWeight.Bold, fontSize = 20.sp)
@@ -129,7 +144,7 @@ fun PantallaEstadisticas(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Componente Gráfica
+        // Componente Gráfica de Peso
         WeightChart(history = player.weightHistory)
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -142,8 +157,27 @@ fun PantallaEstadisticas(
             // Calculamos el cambio desde el inicio
             val firstWeight = getWeightFromHistory(player.weightHistory.firstOrNull())
             val diff = player.weight - firstWeight
-            val sign = if(diff > 0) "+" else "" // Si subió pone +, si bajó pone - automático
+            val sign = if (diff > 0) "+" else "" // Si subió pone +, si bajó pone - automático
             BioMetricCard("CAMBIO", "$sign%.1f kg".format(diff))
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // 5. BOTÓN GRANDE PARA IR A GRÁFICAS DE EJERCICIO
+        Button(
+            onClick = onNavigateToCharts,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = PanelBackgroundLocal),
+            border = androidx.compose.foundation.BorderStroke(1.dp, GraphLineColorLocal),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text(
+                "📈  VER RENDIMIENTO DE EJERCICIOS",
+                color = GraphLineColorLocal,
+                fontWeight = FontWeight.Bold
+            )
         }
 
         Spacer(modifier = Modifier.height(32.dp)) // Espacio final para scroll
@@ -159,7 +193,12 @@ fun RpgStatBar(label: String, value: Int, color: Color) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(label, color = Color.LightGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = label,
+                color = Color.LightGray,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
             Text(
                 text = "$value",
                 color = color,
@@ -170,21 +209,20 @@ fun RpgStatBar(label: String, value: Int, color: Color) {
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Barra Visual: Usamos Módulo 50 para que la barra se llene y reinicie visualmente al subir mucho
-        // pero el número sigue subiendo eternamente.
+        // Barra Visual
         val progress = (value % 50) / 50f
-        val visualProgress = if (value > 0 && progress == 0f) 1f else progress // Si es 50, 100, etc se ve llena
+        val visualProgress = if (value > 0 && progress == 0f) 1f else progress
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(12.dp)
-                .clip(CutCornerShape(bottomEnd = 8.dp)) // Corte futurista en la esquina
+                .clip(CutCornerShape(bottomEnd = 8.dp))
                 .background(Color.Black)
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(if(value > 0) visualProgress + 0.05f else 0f) // Mínimo visual
+                    .fillMaxWidth(if (value > 0) visualProgress + 0.05f else 0f)
                     .fillMaxHeight()
                     .background(
                         brush = Brush.horizontalGradient(
@@ -207,7 +245,11 @@ fun WeightChart(history: List<String>) {
     }.sortedBy { it.first }
 
     if (dataPoints.isEmpty()) {
-        Text("No hay datos registrados aún.", color = Color.Gray, modifier = Modifier.padding(8.dp))
+        Text(
+            "No hay datos registrados aún.",
+            color = Color.Gray,
+            modifier = Modifier.padding(8.dp)
+        )
         return
     }
 
@@ -216,17 +258,18 @@ fun WeightChart(history: List<String>) {
     val maxWeight = (weights.maxOrNull() ?: 100f) + 2f
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = PanelBackground),
+        colors = CardDefaults.cardColors(containerColor = PanelBackgroundLocal),
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
             .border(1.dp, Color.DarkGray, RoundedCornerShape(8.dp))
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
-            Canvas(modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f) // Ocupa todo el espacio disponible en la tarjeta
-                .padding(8.dp)
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(8.dp)
             ) {
                 val width = size.width
                 val height = size.height
@@ -234,7 +277,7 @@ fun WeightChart(history: List<String>) {
                 // Caso especial: Solo 1 punto
                 if (dataPoints.size == 1) {
                     drawLine(
-                        color = GraphLineColor,
+                        color = GraphLineColorLocal,
                         start = Offset(0f, height / 2),
                         end = Offset(width, height / 2),
                         strokeWidth = 5f
@@ -247,7 +290,6 @@ fun WeightChart(history: List<String>) {
 
                 dataPoints.forEachIndexed { index, point ->
                     val x = index * xStep
-                    // Normalizar Y para que entre en la gráfica
                     val normalizedY = (point.second - minWeight) / (maxWeight - minWeight)
                     val y = height - (normalizedY * height)
 
@@ -257,13 +299,13 @@ fun WeightChart(history: List<String>) {
                         path.lineTo(x, y)
                     }
                     // Dibujar punto
-                    drawCircle(color = GraphLineColor, radius = 6f, center = Offset(x, y))
+                    drawCircle(color = GraphLineColorLocal, radius = 6f, center = Offset(x, y))
                 }
 
                 // Dibujar línea conectora
                 drawPath(
                     path = path,
-                    color = GraphLineColor,
+                    color = GraphLineColorLocal,
                     style = Stroke(width = 4f)
                 )
 
@@ -277,15 +319,26 @@ fun WeightChart(history: List<String>) {
                 drawPath(
                     path = fillPath,
                     brush = Brush.verticalGradient(
-                        colors = listOf(GraphLineColor.copy(alpha = 0.3f), Color.Transparent)
+                        colors = listOf(
+                            GraphLineColorLocal.copy(alpha = 0.3f),
+                            Color.Transparent
+                        )
                     )
                 )
             }
 
             // Fechas Inicio y Fin
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(formatDate(dataPoints.first().first), color = Color.Gray, fontSize = 10.sp)
-                Text(formatDate(dataPoints.last().first), color = Color.Gray, fontSize = 10.sp)
+                Text(
+                    formatDate(dataPoints.first().first),
+                    color = Color.Gray,
+                    fontSize = 10.sp
+                )
+                Text(
+                    formatDate(dataPoints.last().first),
+                    color = Color.Gray,
+                    fontSize = 10.sp
+                )
             }
         }
     }
@@ -301,8 +354,18 @@ fun BioMetricCard(title: String, value: String) {
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(title, color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-            Text(value, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(
+                title,
+                color = Color.Gray,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                value,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
         }
     }
 }
@@ -317,7 +380,9 @@ fun WeightUpdateDialog(onDismiss: () -> Unit, onConfirm: (Float) -> Unit) {
         text = {
             OutlinedTextField(
                 value = weightInput,
-                onValueChange = { if (it.all { char -> char.isDigit() || char == '.' }) weightInput = it },
+                onValueChange = {
+                    if (it.all { char -> char.isDigit() || char == '.' }) weightInput = it
+                },
                 label = { Text("Peso en kg") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true
@@ -335,7 +400,7 @@ fun WeightUpdateDialog(onDismiss: () -> Unit, onConfirm: (Float) -> Unit) {
     )
 }
 
-// --- UTILS ---
+// --- UTILS LOCALES ---
 fun formatDate(millis: Long): String {
     val formatter = SimpleDateFormat("dd MMM", Locale.getDefault())
     return formatter.format(Date(millis))
