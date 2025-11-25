@@ -21,7 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.negocio.warofmen.navigation.AppScreens
+import com.negocio.warofmen.core.navigation.AppScreens
 import com.negocio.warofmen.ui.theme.WarOfMenTheme
 import com.negocio.warofmen.util.GameViewModelFactory
 import com.negocio.warofmen.viewmodel.CreationViewModel

@@ -1,4 +1,4 @@
-package com.negocio.warofmen.navigation
+package com.negocio.warofmen.core.navigation
 
 // Sealed class: Define un conjunto cerrado de opciones. Solo existen estas pantallas.
 sealed class AppScreens(val route: String) {
