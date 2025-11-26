@@ -1,4 +1,4 @@
-package com.negocio.warofmen.vista
+package com.negocio.warofmen.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,17 +8,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.negocio.warofmen.componentes.LevelUpDialog
-import com.negocio.warofmen.componentes.QuestCard
-import com.negocio.warofmen.componentes.XpProgressBar
+import com.negocio.warofmen.ui.components.LevelUpDialog
+import com.negocio.warofmen.ui.components.QuestCard
+import com.negocio.warofmen.ui.components.XpProgressBar
 import com.negocio.warofmen.ui.theme.RpgBackground
 import com.negocio.warofmen.ui.theme.RpgPanel
-import com.negocio.warofmen.viewmodel.HomeViewModel
+import com.negocio.warofmen.ui.viewmodel.HomeViewModel
 
 @Composable
 fun PantallaJuego(
@@ -53,7 +54,7 @@ fun PantallaJuego(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
                     Text(

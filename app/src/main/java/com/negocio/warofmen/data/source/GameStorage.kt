@@ -1,8 +1,9 @@
-package com.negocio.warofmen.dato
+package com.negocio.warofmen.data.source
 
 import android.content.Context
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import com.negocio.warofmen.data.model.PlayerCharacter
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

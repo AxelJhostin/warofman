@@ -1,4 +1,4 @@
-package com.negocio.warofmen.vista
+package com.negocio.warofmen.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,9 +15,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.negocio.warofmen.componentes.ExerciseChart // Importado
-import com.negocio.warofmen.componentes.StatBox      // Importado
-import com.negocio.warofmen.dato.QuestProvider
+import com.negocio.warofmen.ui.components.ExerciseChart // Importado
+import com.negocio.warofmen.ui.components.StatBox      // Importado
+import com.negocio.warofmen.data.source.QuestProvider
 import com.negocio.warofmen.ui.theme.*
 
 @Composable

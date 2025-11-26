@@ -1,10 +1,10 @@
-package com.negocio.warofmen.viewmodel
+package com.negocio.warofmen.ui.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.negocio.warofmen.dato.GameRepository
-import com.negocio.warofmen.dato.PlayerCharacter
+import com.negocio.warofmen.data.repository.GameRepository
+import com.negocio.warofmen.data.model.PlayerCharacter
 import kotlinx.coroutines.launch
 
 class CreationViewModel(application: Application) : AndroidViewModel(application) {

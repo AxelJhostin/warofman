@@ -1,7 +1,6 @@
-package com.negocio.warofmen.vista
+package com.negocio.warofmen.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -18,10 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.negocio.warofmen.dato.ExerciseType
-import com.negocio.warofmen.dato.Quest
+import com.negocio.warofmen.data.model.ExerciseType
 import com.negocio.warofmen.ui.theme.RpgBackground
-import com.negocio.warofmen.viewmodel.HomeViewModel
+import com.negocio.warofmen.ui.viewmodel.HomeViewModel
 import kotlinx.coroutines.delay
 
 // Color Naranja Deportivo (Estilo Thenics/Nike)

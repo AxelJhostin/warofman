@@ -1,4 +1,7 @@
-package com.negocio.warofmen.dato
+package com.negocio.warofmen.data.source
+
+import com.negocio.warofmen.data.model.ExerciseType
+import com.negocio.warofmen.data.model.Quest
 
 object QuestProvider {
 
@@ -15,7 +18,7 @@ object QuestProvider {
                 xpReward = xpBase,
                 statBonus = "STR",
                 type = ExerciseType.REPS,
-                sets = listOf(5*m, 6*m, 5*m, 4*m), // 4 Series
+                sets = listOf(5 * m, 6 * m, 5 * m, 4 * m), // 4 Series
                 restSeconds = 30
             ),
 
@@ -27,7 +30,7 @@ object QuestProvider {
                 xpReward = (xpBase * 0.8).toInt(),
                 statBonus = "STA",
                 type = ExerciseType.REPS,
-                sets = listOf(10*m, 10*m, 10*m), // 3 Series
+                sets = listOf(10 * m, 10 * m, 10 * m), // 3 Series
                 restSeconds = 45
             ),
 
@@ -39,7 +42,7 @@ object QuestProvider {
                 xpReward = (xpBase * 1.2).toInt(),
                 statBonus = "WIL",
                 type = ExerciseType.TIMER,
-                sets = listOf(15*m, 20*m, 15*m), // 3 Series de tiempo
+                sets = listOf(15 * m, 20 * m, 15 * m), // 3 Series de tiempo
                 restSeconds = 60
             )
         )

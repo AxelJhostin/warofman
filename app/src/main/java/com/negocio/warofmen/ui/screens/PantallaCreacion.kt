@@ -1,4 +1,4 @@
-package com.negocio.warofmen.vista
+package com.negocio.warofmen.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,9 +20,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.negocio.warofmen.componentes.ClassSelectionCard // Importamos el componente
+import com.negocio.warofmen.ui.components.ClassSelectionCard // Importamos el componente
 import com.negocio.warofmen.ui.theme.*
-import com.negocio.warofmen.viewmodel.CreationViewModel
+import com.negocio.warofmen.ui.viewmodel.CreationViewModel
 
 @Composable
 fun PantallaCreacion(

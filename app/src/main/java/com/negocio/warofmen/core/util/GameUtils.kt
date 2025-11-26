@@ -1,4 +1,4 @@
-package com.negocio.warofmen.util
+package com.negocio.warofmen.core.util
 
 import android.content.Context
 import android.os.Build

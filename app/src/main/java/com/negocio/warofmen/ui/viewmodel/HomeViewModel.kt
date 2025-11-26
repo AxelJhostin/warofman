@@ -1,13 +1,13 @@
-package com.negocio.warofmen.viewmodel
+package com.negocio.warofmen.ui.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.negocio.warofmen.dato.GameRepository
-import com.negocio.warofmen.dato.PlayerCharacter
-import com.negocio.warofmen.dato.Quest
-import com.negocio.warofmen.dato.QuestProvider
-import com.negocio.warofmen.util.GameUtils
+import com.negocio.warofmen.data.repository.GameRepository
+import com.negocio.warofmen.data.model.PlayerCharacter
+import com.negocio.warofmen.data.model.Quest
+import com.negocio.warofmen.data.source.QuestProvider
+import com.negocio.warofmen.core.util.GameUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

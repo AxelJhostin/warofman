@@ -1,4 +1,4 @@
-package com.negocio.warofmen.dato
+package com.negocio.warofmen.data.model
 
 enum class ExerciseType { REPS, TIMER }
 

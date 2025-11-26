@@ -1,4 +1,4 @@
-package com.negocio.warofmen.componentes
+package com.negocio.warofmen.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

@@ -1,10 +1,10 @@
-package com.negocio.warofmen.util
+package com.negocio.warofmen.core.util
 
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.negocio.warofmen.viewmodel.CreationViewModel
-import com.negocio.warofmen.viewmodel.HomeViewModel
+import com.negocio.warofmen.ui.viewmodel.CreationViewModel
+import com.negocio.warofmen.ui.viewmodel.HomeViewModel
 
 class GameViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")

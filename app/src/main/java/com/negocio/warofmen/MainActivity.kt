@@ -23,14 +23,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.negocio.warofmen.core.navigation.AppScreens
 import com.negocio.warofmen.ui.theme.WarOfMenTheme
-import com.negocio.warofmen.util.GameViewModelFactory
-import com.negocio.warofmen.viewmodel.CreationViewModel
-import com.negocio.warofmen.viewmodel.HomeViewModel
-import com.negocio.warofmen.vista.PantallaCreacion
-import com.negocio.warofmen.vista.PantallaEntrenamiento
-import com.negocio.warofmen.vista.PantallaEstadisticas
-import com.negocio.warofmen.vista.PantallaGraficos
-import com.negocio.warofmen.vista.PantallaJuego
+import com.negocio.warofmen.core.util.GameViewModelFactory
+import com.negocio.warofmen.ui.viewmodel.CreationViewModel
+import com.negocio.warofmen.ui.viewmodel.HomeViewModel
+import com.negocio.warofmen.ui.screens.PantallaCreacion
+import com.negocio.warofmen.ui.screens.PantallaEntrenamiento
+import com.negocio.warofmen.ui.screens.PantallaEstadisticas
+import com.negocio.warofmen.ui.screens.PantallaGraficos
+import com.negocio.warofmen.ui.screens.PantallaJuego
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

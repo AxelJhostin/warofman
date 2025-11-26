@@ -1,5 +1,6 @@
-package com.negocio.warofmen.vista
+package com.negocio.warofmen.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -14,10 +15,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.negocio.warofmen.componentes.* // Importamos TODOS los componentes (Gráfica, Barras, Cards, Dialog)
-import com.negocio.warofmen.dato.PlayerCharacter
+import com.negocio.warofmen.data.model.PlayerCharacter
 import com.negocio.warofmen.ui.theme.* // Importamos los colores globales
-import com.negocio.warofmen.util.GameUtils // Importamos utilidades matemáticas
+import com.negocio.warofmen.core.util.GameUtils // Importamos utilidades matemáticas
+import com.negocio.warofmen.ui.components.BioMetricCard
+import com.negocio.warofmen.ui.components.RpgStatBar
+import com.negocio.warofmen.ui.components.WeightChart
+import com.negocio.warofmen.ui.components.WeightUpdateDialog
 
 @Composable
 fun PantallaEstadisticas(
@@ -150,7 +154,7 @@ fun PantallaEstadisticas(
                 .fillMaxWidth()
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = RpgPanel),
-            border = androidx.compose.foundation.BorderStroke(1.dp, RpgNeonCyan),
+            border = BorderStroke(1.dp, RpgNeonCyan),
             shape = RoundedCornerShape(8.dp)
         ) {
             Text(

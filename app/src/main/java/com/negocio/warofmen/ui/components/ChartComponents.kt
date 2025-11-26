@@ -1,4 +1,4 @@
-package com.negocio.warofmen.componentes
+package com.negocio.warofmen.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.negocio.warofmen.ui.theme.*
-import com.negocio.warofmen.util.GameUtils
+import com.negocio.warofmen.core.util.GameUtils
 
 @Composable
 fun WeightChart(history: List<String>) {

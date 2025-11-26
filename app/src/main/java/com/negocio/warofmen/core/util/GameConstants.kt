@@ -1,4 +1,4 @@
-package com.negocio.warofmen.util
+package com.negocio.warofmen.core.util
 
 object GameConstants {
     // Configuración de Niveles
