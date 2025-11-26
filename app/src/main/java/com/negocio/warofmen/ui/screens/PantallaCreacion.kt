@@ -167,9 +167,22 @@ fun PantallaCreacion(
                 val w = peso.toFloatOrNull() ?: 70f
                 val h = altura.toFloatOrNull() ?: 170f
                 val a = edad.toIntOrNull() ?: 25
-                viewModel.createCharacter(nombre, w, h, a, genero) {
-                    onFinished()
-                }
+
+                // CORRECCIÓN: Usamos argumentos nombrados para evitar errores de orden
+                // y pasamos null en los datos que aún no pedimos en la UI (cuello, cintura, etc.)
+                viewModel.createCharacter(
+                    name = nombre,
+                    gender = genero,
+                    age = a,
+                    height = h,
+                    weight = w,
+                    neck = null,  // Aún no tenemos el campo en la UI
+                    waist = null, // Aún no tenemos el campo en la UI
+                    hip = null,   // Aún no tenemos el campo en la UI
+                    onResult = {
+                        onFinished()
+                    }
+                )
             },
             modifier = Modifier
                 .fillMaxWidth()

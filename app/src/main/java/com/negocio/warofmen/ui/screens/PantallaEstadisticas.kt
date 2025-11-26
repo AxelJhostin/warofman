@@ -1,6 +1,5 @@
-package com.negocio.warofmen.ui.screens
+package com.negocio.warofmen.ui.screens // Ojo al paquete
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -16,12 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.negocio.warofmen.data.model.PlayerCharacter
-import com.negocio.warofmen.ui.theme.* // Importamos los colores globales
-import com.negocio.warofmen.core.util.GameUtils // Importamos utilidades matemáticas
-import com.negocio.warofmen.ui.components.BioMetricCard
-import com.negocio.warofmen.ui.components.RpgStatBar
-import com.negocio.warofmen.ui.components.WeightChart
-import com.negocio.warofmen.ui.components.WeightUpdateDialog
+import com.negocio.warofmen.ui.components.*
+import com.negocio.warofmen.ui.theme.*
 
 @Composable
 fun PantallaEstadisticas(
@@ -30,10 +25,8 @@ fun PantallaEstadisticas(
     onUpdateWeight: (Float) -> Unit,
     onNavigateToCharts: () -> Unit
 ) {
-    // Estado para mostrar/ocultar el diálogo de peso
     var showWeightDialog by remember { mutableStateOf(false) }
 
-    // Lógica del Popup (Usando el componente importado)
     if (showWeightDialog) {
         WeightUpdateDialog(
             onDismiss = { showWeightDialog = false },
@@ -47,24 +40,15 @@ fun PantallaEstadisticas(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(RpgBackground) // Color global
+            .background(RpgBackground)
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         // 1. HEADER
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Button(
-                onClick = onBack,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
-            ) { Text("🔙") }
+            Button(onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) { Text("🔙") }
             Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                "ESTADÍSTICAS",
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 2.sp
-            )
+            Text("ESTADÍSTICAS", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -78,21 +62,9 @@ fun PantallaEstadisticas(
                 .padding(16.dp)
         ) {
             Column {
-                Text(
-                    text = player.name.uppercase(),
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
-                )
-                Text(
-                    text = "Nivel ${player.level} ${player.gender}",
-                    color = Color.LightGray,
-                    fontSize = 14.sp
-                )
-
+                Text(player.name.uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                Text("Nivel ${player.level} ${player.gender}", color = Color.LightGray, fontSize = 14.sp)
                 Divider(color = Color.DarkGray, modifier = Modifier.padding(vertical = 12.dp))
-
-                // Usamos los componentes importados con colores globales
                 RpgStatBar("FUERZA (STR)", player.strength, StatStrength)
                 RpgStatBar("AGILIDAD (AGI)", player.agility, StatAgility)
                 RpgStatBar("RESISTENCIA (STA)", player.stamina, StatStamina)
@@ -103,65 +75,52 @@ fun PantallaEstadisticas(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 3. SECCIÓN DE PESO
+        // 3. GRÁFICA DE PESO
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                "HISTORIAL DE PESO",
-                color = Color.Gray,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-
+            Text("HISTORIAL DE PESO", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             SmallFloatingActionButton(
                 onClick = { showWeightDialog = true },
                 containerColor = RpgNeonCyan,
                 contentColor = Color.Black
-            ) {
-                Text("+", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            }
+            ) { Text("+", fontWeight = FontWeight.Bold, fontSize = 20.sp) }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Usamos el componente importado de la gráfica
-        WeightChart(history = player.weightHistory)
+        // AQUI: Pasamos la lista de logs (BodyLog) directamente
+        WeightChart(history = player.measurementLogs)
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // 4. DATOS BIOMÉTRICOS
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            // Usamos componente importado
-            BioMetricCard("PESO ACTUAL", "${player.weight} kg")
-            BioMetricCard("IMC", "%.1f".format(player.bmi))
+            // Usamos currentWeight y currentBmi
+            BioMetricCard("PESO ACTUAL", "${player.currentWeight} kg")
+            BioMetricCard("IMC", "%.1f".format(player.currentBmi))
 
-            // Lógica con GameUtils
-            val firstWeight = GameUtils.getWeightFromHistory(player.weightHistory.firstOrNull())
-            val diff = player.weight - firstWeight
+            // Cálculo del cambio: Peso Actual - Primer Peso Registrado
+            val firstLog = player.measurementLogs.minByOrNull { it.timestamp }
+            val firstWeight = firstLog?.weight ?: player.currentWeight
+            val diff = player.currentWeight - firstWeight
             val sign = if (diff > 0) "+" else ""
+
             BioMetricCard("CAMBIO", "$sign%.1f kg".format(diff))
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // 5. BOTÓN A GRÁFICAS DE EJERCICIO
         Button(
             onClick = onNavigateToCharts,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = RpgPanel),
-            border = BorderStroke(1.dp, RpgNeonCyan),
+            border = androidx.compose.foundation.BorderStroke(1.dp, RpgNeonCyan),
             shape = RoundedCornerShape(8.dp)
         ) {
-            Text(
-                "📈  VER RENDIMIENTO DE EJERCICIOS",
-                color = RpgNeonCyan,
-                fontWeight = FontWeight.Bold
-            )
+            Text("📈  VER RENDIMIENTO DE EJERCICIOS", color = RpgNeonCyan, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(32.dp))

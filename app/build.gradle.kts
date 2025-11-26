@@ -61,4 +61,6 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     //navegacion
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    //guardar los datos de forma más detallada
+    implementation("com.google.code.gson:gson:2.10.1")
 }
