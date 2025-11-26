@@ -84,3 +84,15 @@ data class Quest(
     val sets: List<Int> = listOf(10),
     val restSeconds: Int = 60
 )
+
+data class ExerciseVariant(
+    val name: String,       // Ej: "Flexiones Diamante"
+    val baseDifficulty: Float, // Ej: 1.5x más XP
+    val isTimer: Boolean = false // Si es por tiempo o reps
+)
+
+data class ExerciseFamily(
+    val id: String,         // Ej: "push_family"
+    val stat: String,       // Ej: "STR"
+    val variants: List<ExerciseVariant> // Lista de 5 niveles (Novato -> Leyenda)
+)
