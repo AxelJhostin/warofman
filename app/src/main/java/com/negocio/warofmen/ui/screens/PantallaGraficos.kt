@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,8 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.negocio.warofmen.ui.components.ExerciseChart // Importado
-import com.negocio.warofmen.ui.components.StatBox      // Importado
+import com.negocio.warofmen.ui.components.ExerciseChart
+import com.negocio.warofmen.ui.components.StatBox
 import com.negocio.warofmen.data.source.QuestProvider
 import com.negocio.warofmen.ui.theme.*
 
@@ -26,20 +27,16 @@ fun PantallaGraficos(
     level: Int,
     onBack: () -> Unit
 ) {
-    // Obtenemos las misiones posibles para llenar el selector
     val availableQuests = remember(level) { QuestProvider.getQuestsForLevel(level) }
-
-    // Estado del selector
     var selectedQuest by remember { mutableStateOf(availableQuests.firstOrNull()) }
     var expanded by remember { mutableStateOf(false) }
 
-    // Filtramos los logs para el ejercicio seleccionado
     val chartData = remember(selectedQuest, workoutLogs) {
         if (selectedQuest == null) emptyList()
         else {
             workoutLogs
                 .map { it.split(":") }
-                .filter { it.size == 3 && it[0].toInt() == selectedQuest!!.id } // Filtramos por ID
+                .filter { it.size == 3 && it[0].toInt() == selectedQuest!!.id }
                 .map {
                     val time = it[1].toLong()
                     val reps = it[2].toInt()
@@ -57,10 +54,16 @@ fun PantallaGraficos(
     ) {
         // HEADER
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) {
-                Text("🔙")
+            // SOLUCIÓN 2: Icono limpio en lugar de botón gris
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
+                )
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Text("RENDIMIENTO", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
         }
 
@@ -111,12 +114,10 @@ fun PantallaGraficos(
             Text("PROGRESO (Volumen Total)", color = RpgNeonCyan, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Usamos el componente importado
             ExerciseChart(dataPoints = chartData)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Resumen Rápido con componentes importados
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 StatBox("MÁXIMO", "${chartData.maxOf { it.second }}")
                 StatBox("TOTAL SESIONES", "${chartData.size}")

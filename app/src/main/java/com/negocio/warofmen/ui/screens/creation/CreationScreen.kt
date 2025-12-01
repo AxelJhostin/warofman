@@ -46,7 +46,6 @@ fun CreationScreen(
             .fillMaxSize()
             .background(RpgBackground)
             .padding(16.dp)
-            .navigationBarsPadding() // Evita que la barra de gestos tape botones
             .imePadding() // Evita que el teclado tape botones
     ) {
         // 1. BARRA SUPERIOR

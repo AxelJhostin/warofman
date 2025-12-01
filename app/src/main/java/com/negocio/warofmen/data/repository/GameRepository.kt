@@ -17,4 +17,8 @@ class GameRepository(context: Context) {
     suspend fun savePlayer(player: PlayerCharacter) {
         storage.savePlayer(player)
     }
+
+    suspend fun resetGame() {
+        storage.clearAllData()
+    }
 }

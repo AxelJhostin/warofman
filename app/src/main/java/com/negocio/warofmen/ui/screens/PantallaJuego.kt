@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -24,7 +26,8 @@ import com.negocio.warofmen.ui.viewmodel.HomeViewModel
 @Composable
 fun PantallaJuego(
     viewModel: HomeViewModel,
-    onStartQuest: () -> Unit // Parámetro nuevo para navegar al entrenamiento
+    onStartQuest: () -> Unit, // Parámetro nuevo para navegar al entrenamiento
+    onOpenSettings: () -> Unit
 ) {
     // Observamos los datos
     val gameState by viewModel.gameState.collectAsState()
@@ -71,7 +74,14 @@ fun PantallaJuego(
                         letterSpacing = 2.sp
                     )
                 }
-                // Aquí podrías poner el Nivel en grande si quisieras
+                // BOTÓN DE AJUSTES
+                IconButton(onClick = onOpenSettings) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Ajustes",
+                        tint = Color.Gray
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

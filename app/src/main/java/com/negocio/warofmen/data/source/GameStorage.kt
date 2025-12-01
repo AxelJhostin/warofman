@@ -116,4 +116,10 @@ class GameStorage(private val context: Context) {
             preferences[INVENTORY_KEY] = player.inventory.toSet()
         }
     }
+
+    suspend fun clearAllData() {
+        context.dataStore.edit { preferences ->
+            preferences.clear() // ¡Borrón y cuenta nueva!
+        }
+    }
 }

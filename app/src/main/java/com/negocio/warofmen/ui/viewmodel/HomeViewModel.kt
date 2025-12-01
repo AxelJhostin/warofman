@@ -19,6 +19,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = GameRepository(application)
 
+    // --- ESTA ES LA VARIABLE QUE TE FALTA ---
+    // Bandera para saber si ya leímos el DataStore (Pantalla de Carga)
+    private val _isDataLoaded = MutableStateFlow(false)
+    val isDataLoaded: StateFlow<Boolean> = _isDataLoaded.asStateFlow()
+    // ----------------------------------------
+
     // Estado del Jugador
     private val _gameState = MutableStateFlow(PlayerCharacter())
     val gameState: StateFlow<PlayerCharacter> = _gameState.asStateFlow()
@@ -41,6 +47,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 _gameState.value = savedPlayer
                 // Cargamos las misiones adecuadas para el nivel del jugador
                 loadQuests(savedPlayer.level)
+
+                // --- AVISAMOS QUE YA CARGÓ ---
+                _isDataLoaded.value = true
             }
         }
     }
@@ -91,7 +100,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         // 3. Registrar en el Historial de Entrenamientos (LOGS)
-        // Calculamos el volumen total (Suma de todas las series)
         val totalVolume = quest.sets.sum()
         // Formato: "QuestID:Timestamp:Volumen"
         val logEntry = "${quest.id}:${System.currentTimeMillis()}:$totalVolume"
@@ -125,7 +133,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // ------------------------------------------------------
-    // LÓGICA DE PESO Y BIOMETRÍA (ACTUALIZADA)
+    // LÓGICA DE PESO Y BIOMETRÍA
     // ------------------------------------------------------
 
     fun updateWeight(newWeight: Float) {
@@ -135,21 +143,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val newBmi = GameUtils.calculateBMI(newWeight, currentPlayer.height)
 
         // 2. Crear registro histórico complejo (BodyLog)
-        // Al ser una actualización rápida de peso, los datos de medidas van como null
         val newLog = BodyLog(
             timestamp = System.currentTimeMillis(),
             weight = newWeight,
             neck = null,
             waist = null,
             hip = null,
-            bodyFatPercentage = null // Mantenemos null o copiamos el anterior si quisiéramos
+            bodyFatPercentage = null
         )
 
         // 3. Actualizar la lista de registros
         val newHistory = currentPlayer.measurementLogs.toMutableList()
         newHistory.add(newLog)
 
-        // 4. Actualizar al jugador con los nuevos valores actuales
+        // 4. Actualizar al jugador
         val updatedPlayer = currentPlayer.copy(
             currentWeight = newWeight,
             currentBmi = newBmi,
@@ -174,7 +181,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun loadQuests(level: Int) {
-        // Usamos el QuestProvider para obtener las misiones
         _quests.value = QuestProvider.getQuestsForLevel(level)
     }
 }

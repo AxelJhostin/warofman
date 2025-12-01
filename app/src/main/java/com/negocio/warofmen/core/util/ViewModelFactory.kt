@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.negocio.warofmen.ui.viewmodel.CreationViewModel
 import com.negocio.warofmen.ui.viewmodel.HomeViewModel
+import com.negocio.warofmen.ui.viewmodel.SettingsViewModel
 
 class GameViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
@@ -14,6 +15,9 @@ class GameViewModelFactory(private val application: Application) : ViewModelProv
         }
         if (modelClass.isAssignableFrom(CreationViewModel::class.java)) {
             return CreationViewModel(application) as T
+        }
+        if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
+            return SettingsViewModel(application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
