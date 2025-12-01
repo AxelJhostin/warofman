@@ -36,9 +36,17 @@ fun StepIdentity(
     Spacer(modifier = Modifier.height(24.dp))
 
     OutlinedTextField(
-        value = nombre, onValueChange = onNameChange,
-        label = { Text("Nombre de Héroe") }, modifier = Modifier.fillMaxWidth(), colors = colors,
-        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+        value = nombre,
+        onValueChange = onNameChange,
+        label = { Text("Nombre de Héroe") },
+        modifier = Modifier.fillMaxWidth(),
+        colors = colors,
+        // Agregamos autoCorrect = false para evitar el crash del emulador
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.Sentences,
+            autoCorrect = false,
+            keyboardType = KeyboardType.Text
+        )
     )
     Spacer(modifier = Modifier.height(16.dp))
 
