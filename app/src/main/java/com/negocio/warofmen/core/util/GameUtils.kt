@@ -112,4 +112,26 @@ object GameUtils {
             null
         }
     }
+// ==========================================
+    // 4. LÓGICA DE FECHAS (RACHAS)
+    // ==========================================
+
+    fun isToday(millis: Long): Boolean {
+        val date = Date(millis)
+        val today = Date()
+        val fmt = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+        return fmt.format(date) == fmt.format(today)
+    }
+
+    fun isYesterday(millis: Long): Boolean {
+        val date = Date(millis)
+        // Calcular ayer
+        val cal = java.util.Calendar.getInstance()
+        cal.add(java.util.Calendar.DAY_OF_YEAR, -1)
+        val yesterday = cal.time
+
+        val fmt = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+        return fmt.format(date) == fmt.format(yesterday)
+    }
+
 }

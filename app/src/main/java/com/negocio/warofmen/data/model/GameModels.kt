@@ -32,6 +32,7 @@ data class BodyLog(
 // --- JUGADOR ACTUALIZADO ---
 data class PlayerCharacter(
     // Identidad
+
     val name: String = "",
     val gender: String = "Guerrero", // "Guerrero" (H) o "Amazona" (M)
     val age: Int = 25,
@@ -59,7 +60,9 @@ data class PlayerCharacter(
 
     // Estos los mantenemos simples por ahora (String)
     val workoutLogs: List<String> = emptyList(),
-    val inventory: List<String> = emptyList()
+    val inventory: List<String> = emptyList(),
+    val currentStreak: Int = 0,      // Días seguidos (Ej: 5)
+    val lastWorkoutDate: Long = 0L
 )
 
 // Clase Item (Objeto del juego)

@@ -1,9 +1,11 @@
 package com.negocio.warofmen.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -26,15 +28,13 @@ import com.negocio.warofmen.ui.viewmodel.HomeViewModel
 @Composable
 fun PantallaJuego(
     viewModel: HomeViewModel,
-    onStartQuest: () -> Unit, // Parámetro nuevo para navegar al entrenamiento
+    onStartQuest: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
-    // Observamos los datos
     val gameState by viewModel.gameState.collectAsState()
     val quests by viewModel.quests.collectAsState()
     val showLevelUp by viewModel.showLevelUpDialog.collectAsState()
 
-    // Diálogo de Nivel Subido
     if (showLevelUp) {
         LevelUpDialog(level = gameState.level) {
             viewModel.dismissDialog()
@@ -44,22 +44,23 @@ fun PantallaJuego(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(RpgBackground) // Fondo oscuro global
+            .background(RpgBackground)
     ) {
-        // 1. HEADER (Panel de Estado del Personaje)
+        // 1. HEADER (Panel de Estado)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(RpgPanel) // Fondo del panel superior
+                .background(RpgPanel)
                 .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp)
         ) {
-            // Fila: Nombre y Clase
+            // Fila Superior: Nombre, Racha y Ajustes
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                // Nombre y Clase
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = gameState.name.uppercase(),
                         style = MaterialTheme.typography.titleLarge,
@@ -74,7 +75,31 @@ fun PantallaJuego(
                         letterSpacing = 2.sp
                     )
                 }
-                // BOTÓN DE AJUSTES
+
+                // ICONO DE RACHA (STREAK) 🔥
+                val streakColor = if (gameState.currentStreak > 0) Color(0xFFFF5722) else Color.Gray
+
+                Surface(
+                    color = streakColor.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, streakColor),
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("🔥", fontSize = 16.sp)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${gameState.currentStreak}",
+                            color = streakColor,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                // Botón Ajustes
                 IconButton(onClick = onOpenSettings) {
                     Icon(
                         imageVector = Icons.Default.Settings,
@@ -86,11 +111,11 @@ fun PantallaJuego(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Barra de XP visual
+            // Barra de XP
             XpProgressBar(gameState.currentXp, gameState.maxXp, gameState.level)
         }
 
-        // 2. LISTA DE MISIONES (ENTRENAMIENTOS)
+        // 2. LISTA DE MISIONES
         Text(
             text = "ENTRENAMIENTOS DISPONIBLES",
             style = MaterialTheme.typography.labelLarge,
@@ -101,15 +126,12 @@ fun PantallaJuego(
 
         LazyColumn(
             modifier = Modifier.padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(bottom = 80.dp) // Espacio extra abajo para que el botón flotante no tape la última tarjeta
+            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             items(quests) { quest ->
-                // Usamos la QuestCard que ya diseñamos
                 QuestCard(
                     quest = quest,
                     onComplete = {
-                        // AQUÍ ESTÁ LA MAGIA:
-                        // En lugar de "completar" ya, seleccionamos la quest y vamos a la pantalla naranja
                         viewModel.selectQuest(quest)
                         onStartQuest()
                     }

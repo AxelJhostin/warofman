@@ -19,11 +19,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = GameRepository(application)
 
-    // --- ESTA ES LA VARIABLE QUE TE FALTA ---
     // Bandera para saber si ya leímos el DataStore (Pantalla de Carga)
     private val _isDataLoaded = MutableStateFlow(false)
     val isDataLoaded: StateFlow<Boolean> = _isDataLoaded.asStateFlow()
-    // ----------------------------------------
 
     // Estado del Jugador
     private val _gameState = MutableStateFlow(PlayerCharacter())
@@ -48,7 +46,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 // Cargamos las misiones adecuadas para el nivel del jugador
                 loadQuests(savedPlayer.level)
 
-                // --- AVISAMOS QUE YA CARGÓ ---
+                // Avisamos a la UI que los datos están listos
                 _isDataLoaded.value = true
             }
         }
@@ -69,6 +67,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun completeQuest(quest: Quest) {
         val currentPlayer = _gameState.value
         val context = getApplication<Application>().applicationContext
+
+        // Obtenemos la fecha actual
+        val now = System.currentTimeMillis()
 
         // 1. Cálculo de XP
         var newXp = currentPlayer.currentXp + quest.xpReward
@@ -102,12 +103,26 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         // 3. Registrar en el Historial de Entrenamientos (LOGS)
         val totalVolume = quest.sets.sum()
         // Formato: "QuestID:Timestamp:Volumen"
-        val logEntry = "${quest.id}:${System.currentTimeMillis()}:$totalVolume"
+        val logEntry = "${quest.id}:$now:$totalVolume"
 
         val newWorkoutLogs = currentPlayer.workoutLogs.toMutableList()
         newWorkoutLogs.add(logEntry)
 
-        // 4. Feedback Sensorial (Vibración)
+        // 4. LÓGICA DE RACHA (STREAK) - ¡NUEVO!
+        var newStreak = currentPlayer.currentStreak
+        val lastDate = currentPlayer.lastWorkoutDate
+
+        if (GameUtils.isToday(lastDate)) {
+            // Ya entrenó hoy: No cambia la racha
+        } else if (GameUtils.isYesterday(lastDate) || lastDate == 0L) {
+            // Entrenó ayer O es la primera vez en su vida: Sube la racha
+            newStreak += 1
+        } else {
+            // Se saltó un día o más: La racha se reinicia a 1 (hoy cuenta como el primero)
+            newStreak = 1
+        }
+
+        // 5. Feedback Sensorial (Vibración)
         if (leveledUp) {
             GameUtils.vibrate(context, "levelup")
             _showLevelUpDialog.value = true
@@ -116,7 +131,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             GameUtils.vibrate(context, "success")
         }
 
-        // 5. Guardar cambios
+        // 6. Guardar cambios
         val updatedPlayer = currentPlayer.copy(
             currentXp = newXp,
             level = newLevel,
@@ -126,7 +141,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             agility = newAgi,
             willpower = newWil,
             luck = newLuk,
-            workoutLogs = newWorkoutLogs
+            workoutLogs = newWorkoutLogs,
+            // Guardamos los datos de racha
+            currentStreak = newStreak,
+            lastWorkoutDate = now
         )
 
         updatePlayer(updatedPlayer)

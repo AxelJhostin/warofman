@@ -43,6 +43,9 @@ class GameStorage(private val context: Context) {
         val MEASUREMENT_LOGS_KEY = stringPreferencesKey("json_measurement_logs") // Guardaremos el JSON aquí
         val WORKOUT_LOGS_KEY = stringSetPreferencesKey("set_workout_logs") // Este lo dejamos simple por ahora
         val INVENTORY_KEY = stringSetPreferencesKey("set_inventory")
+
+        val STREAK_KEY = intPreferencesKey("user_streak")
+        val LAST_WORKOUT_KEY = longPreferencesKey("user_last_workout")
     }
 
     val getUserFlow: Flow<PlayerCharacter> = context.dataStore.data
@@ -81,7 +84,9 @@ class GameStorage(private val context: Context) {
                 measurementLogs = measurementList,
 
                 workoutLogs = preferences[WORKOUT_LOGS_KEY]?.toList() ?: emptyList(),
-                inventory = preferences[INVENTORY_KEY]?.toList() ?: emptyList()
+                inventory = preferences[INVENTORY_KEY]?.toList() ?: emptyList(),
+                currentStreak = preferences[STREAK_KEY] ?: 0,
+                lastWorkoutDate = preferences[LAST_WORKOUT_KEY] ?: 0L
             )
         }
 
@@ -114,6 +119,9 @@ class GameStorage(private val context: Context) {
 
             preferences[WORKOUT_LOGS_KEY] = player.workoutLogs.toSet()
             preferences[INVENTORY_KEY] = player.inventory.toSet()
+
+            preferences[STREAK_KEY] = player.currentStreak
+            preferences[LAST_WORKOUT_KEY] = player.lastWorkoutDate
         }
     }
 
