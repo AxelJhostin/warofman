@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import com.negocio.warofmen.data.source.MilestoneProvider
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -68,11 +69,41 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val currentPlayer = _gameState.value
         val context = getApplication<Application>().applicationContext
 
-        // Obtenemos la fecha actual
+        // Fecha actual (momento exacto en que termina la misión)
         val now = System.currentTimeMillis()
 
-        // 1. Cálculo de XP
-        var newXp = currentPlayer.currentXp + quest.xpReward
+        // ---------------------------------------------------------
+        // 1. LÓGICA DE RACHA (STREAK)
+        // ---------------------------------------------------------
+        var newStreak = currentPlayer.currentStreak
+        val lastDate = currentPlayer.lastWorkoutDate
+
+        if (GameUtils.isToday(lastDate)) {
+            // Ya entrenó hoy: La racha no cambia (ni sube ni baja)
+        } else if (GameUtils.isYesterday(lastDate) || lastDate == 0L) {
+            // Entrenó ayer O es su primer entrenamiento histórico: Sube la racha
+            newStreak += 1
+        } else {
+            // Se saltó uno o más días: La racha se reinicia a 1
+            newStreak = 1
+        }
+
+        // ---------------------------------------------------------
+        // 2. CÁLCULO DE XP CON BONUS (SISTEMA DE RECOMPENSAS)
+        // ---------------------------------------------------------
+        // Consultamos qué multiplicador corresponde a la NUEVA racha
+        val multiplier = MilestoneProvider.getCurrentMultiplier(newStreak)
+
+        // XP Base de la misión
+        val baseXp = quest.xpReward
+
+        // Calculamos la XP final aplicando el bonus (convertimos a Int)
+        val xpWithBonus = (baseXp * multiplier).toInt()
+
+        // ---------------------------------------------------------
+        // 3. LÓGICA DE NIVEL Y ATRIBUTOS
+        // ---------------------------------------------------------
+        var newXp = currentPlayer.currentXp + xpWithBonus
         var newLevel = currentPlayer.level
         var newMaxXp = currentPlayer.maxXp
 
@@ -83,66 +114,64 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         var newWil = currentPlayer.willpower
         var newLuk = currentPlayer.luck
 
-        // 2. Comprobamos si sube de nivel
         var leveledUp = false
+
+        // Comprobamos si la XP supera el máximo para subir de nivel
         if (newXp >= newMaxXp) {
-            newXp -= newMaxXp
+            newXp -= newMaxXp // Restamos el costo del nivel (XP sobrante se queda)
             newLevel += 1
-            newMaxXp = (newMaxXp * 1.2).toInt()
+            newMaxXp = (newMaxXp * 1.2).toInt() // El siguiente nivel es 20% más difícil
 
             // BONUS DE LEVEL UP: Suben todas las estadísticas +1
             newStr += 1
             newSta += 1
             newAgi += 1
             newWil += 1
-            // La suerte la dejamos igual o la subes si quieres
+            // La suerte (LUK) la dejamos igual por ahora
 
             leveledUp = true
         }
 
-        // 3. Registrar en el Historial de Entrenamientos (LOGS)
-        val totalVolume = quest.sets.sum()
-        // Formato: "QuestID:Timestamp:Volumen"
+        // ---------------------------------------------------------
+        // 4. REGISTRO DE HISTORIAL (LOGS)
+        // ---------------------------------------------------------
+        val totalVolume = quest.sets.sum() // Suma total de reps o segundos
+
+        // Formato de guardado: "ID_MISION : TIMESTAMP : VOLUMEN"
         val logEntry = "${quest.id}:$now:$totalVolume"
 
         val newWorkoutLogs = currentPlayer.workoutLogs.toMutableList()
         newWorkoutLogs.add(logEntry)
 
-        // 4. LÓGICA DE RACHA (STREAK) - ¡NUEVO!
-        var newStreak = currentPlayer.currentStreak
-        val lastDate = currentPlayer.lastWorkoutDate
-
-        if (GameUtils.isToday(lastDate)) {
-            // Ya entrenó hoy: No cambia la racha
-        } else if (GameUtils.isYesterday(lastDate) || lastDate == 0L) {
-            // Entrenó ayer O es la primera vez en su vida: Sube la racha
-            newStreak += 1
-        } else {
-            // Se saltó un día o más: La racha se reinicia a 1 (hoy cuenta como el primero)
-            newStreak = 1
-        }
-
-        // 5. Feedback Sensorial (Vibración)
+        // ---------------------------------------------------------
+        // 5. FEEDBACK SENSORIAL (VIBRACIÓN Y DIÁLOGOS)
+        // ---------------------------------------------------------
         if (leveledUp) {
-            GameUtils.vibrate(context, "levelup")
-            _showLevelUpDialog.value = true
-            loadQuests(newLevel)
+            GameUtils.vibrate(context, "levelup") // Vibración épica
+            _showLevelUpDialog.value = true       // Mostrar popup
+            loadQuests(newLevel)                  // Regenerar misiones más difíciles
         } else {
-            GameUtils.vibrate(context, "success")
+            GameUtils.vibrate(context, "success") // Vibración normal
         }
 
-        // 6. Guardar cambios
+        // ---------------------------------------------------------
+        // 6. GUARDADO FINAL (ACTUALIZAR JUGADOR)
+        // ---------------------------------------------------------
         val updatedPlayer = currentPlayer.copy(
+            // Progreso
             currentXp = newXp,
             level = newLevel,
             maxXp = newMaxXp,
+
+            // Atributos
             strength = newStr,
             stamina = newSta,
             agility = newAgi,
             willpower = newWil,
             luck = newLuk,
+
+            // Historiales y Racha
             workoutLogs = newWorkoutLogs,
-            // Guardamos los datos de racha
             currentStreak = newStreak,
             lastWorkoutDate = now
         )

@@ -4,7 +4,7 @@ import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge // <--- IMPORTANTE: Habilita el modo pantalla completa
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,58 +42,50 @@ import com.negocio.warofmen.ui.screens.PantallaEstadisticas
 import com.negocio.warofmen.ui.screens.PantallaGraficos
 import com.negocio.warofmen.ui.screens.PantallaJuego
 import com.negocio.warofmen.ui.screens.SettingsScreen
+import com.negocio.warofmen.ui.screens.PantallaRacha // Nueva Pantalla
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1. ACTIVAR MODO EDGE-TO-EDGE
-        // Esto permite que la app dibuje detrás de las barras de sistema
         enableEdgeToEdge()
 
         setContent {
             WarOfMenTheme {
-                // 2. SCAFFOLD GLOBAL
-                // Este componente calcula automáticamente el espacio necesario para las barras de sistema
-                // y nos entrega 'innerPadding' para que nuestro contenido no se solape.
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     containerColor = MaterialTheme.colorScheme.background
                 ) { innerPadding ->
 
-                    // Aplicamos el padding calculado a todo el contenedor de navegación
                     Box(modifier = Modifier.padding(innerPadding)) {
 
-                        // 3. CONFIGURACIÓN INICIAL
+                        // Configuración Inicial
                         val navController = rememberNavController()
                         val context = LocalContext.current
                         val app = context.applicationContext as Application
                         val factory = GameViewModelFactory(app)
 
-                        // 4. VIEWMODEL PRINCIPAL
+                        // ViewModel Principal (Compartido)
                         val homeViewModel: HomeViewModel = viewModel(factory = factory)
                         val gameState by homeViewModel.gameState.collectAsState()
 
-                        // 5. SISTEMA DE NAVEGACIÓN
+                        // SISTEMA DE NAVEGACIÓN
                         NavHost(
                             navController = navController,
                             startDestination = AppScreens.Home.route
                         ) {
 
-                            // --- RUTA: HOME (PANTALLA PRINCIPAL) ---
+                            // --- RUTA: HOME ---
                             composable(AppScreens.Home.route) {
                                 val isLoaded by homeViewModel.isDataLoaded.collectAsState()
 
                                 if (!isLoaded) {
-                                    // MODO CARGA
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
+                                    // Carga
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                     }
                                 } else {
-                                    // DATOS LISTOS
+                                    // Datos listos
                                     LaunchedEffect(gameState.isCreated) {
                                         if (!gameState.isCreated) {
                                             navController.navigate(AppScreens.Creation.route) {
@@ -103,7 +95,6 @@ class MainActivity : ComponentActivity() {
                                     }
 
                                     if (gameState.isCreated) {
-                                        // NOTA: Usamos Box en lugar de Scaffold interno para mayor control
                                         Box(modifier = Modifier.fillMaxSize()) {
                                             PantallaJuego(
                                                 viewModel = homeViewModel,
@@ -112,10 +103,14 @@ class MainActivity : ComponentActivity() {
                                                 },
                                                 onOpenSettings = {
                                                     navController.navigate(AppScreens.Settings.route)
+                                                },
+                                                // CONEXIÓN A RACHAS (NUEVO)
+                                                onOpenStreak = {
+                                                    navController.navigate(AppScreens.Streak.route)
                                                 }
                                             )
 
-                                            // Botones Flotantes (Stats y Charts) posicionados manualmente
+                                            // Botones Flotantes
                                             Column(
                                                 modifier = Modifier
                                                     .align(Alignment.BottomEnd)
@@ -192,7 +187,6 @@ class MainActivity : ComponentActivity() {
                             // --- RUTA: AJUSTES ---
                             composable(AppScreens.Settings.route) {
                                 val settingsViewModel: SettingsViewModel = viewModel(factory = factory)
-
                                 SettingsScreen(
                                     viewModel = settingsViewModel,
                                     onBack = { navController.popBackStack() },
@@ -201,6 +195,14 @@ class MainActivity : ComponentActivity() {
                                             popUpTo(0)
                                         }
                                     }
+                                )
+                            }
+
+                            // --- RUTA: RACHA / CAMINO DE DISCIPLINA (NUEVO) ---
+                            composable(AppScreens.Streak.route) {
+                                PantallaRacha(
+                                    currentStreak = gameState.currentStreak,
+                                    onBack = { navController.popBackStack() }
                                 )
                             }
                         }
