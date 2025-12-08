@@ -1,6 +1,7 @@
 package com.negocio.warofmen.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -145,9 +146,34 @@ fun ExerciseChart(dataPoints: List<Pair<Long, Int>>) {
 }
 
 @Composable
-fun StatBox(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-        Text(value, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+fun StatBox(
+    label: String,
+    value: String,
+    color: Color = RpgNeonCyan, // Ahora acepta color personalizado
+    modifier: Modifier = Modifier // Ahora acepta modificadores de tamaño (weight)
+) {
+    Box(
+        modifier = modifier
+            .padding(4.dp)
+            .background(RpgPanel, RoundedCornerShape(8.dp))
+            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+            .padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = label,
+                color = Color.Gray,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = value,
+                color = color,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }

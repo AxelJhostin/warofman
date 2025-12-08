@@ -1,23 +1,29 @@
 package com.negocio.warofmen.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.negocio.warofmen.ui.components.*
-import com.negocio.warofmen.data.model.PlayerCharacter
-import com.negocio.warofmen.ui.theme.*
 import com.negocio.warofmen.core.util.GameUtils
+import com.negocio.warofmen.data.model.PlayerCharacter
+import com.negocio.warofmen.ui.components.BioMetricCard
+import com.negocio.warofmen.ui.components.StatBox
+import com.negocio.warofmen.ui.components.WeightChart
+import com.negocio.warofmen.ui.theme.*
 
 @Composable
 fun PantallaEstadisticas(
@@ -27,228 +33,231 @@ fun PantallaEstadisticas(
     onNavigateToCharts: () -> Unit
 ) {
     var showWeightDialog by remember { mutableStateOf(false) }
+    var newWeightInput by remember { mutableStateOf("") }
 
+    // --- DIÁLOGO PARA REGISTRAR PESO ---
     if (showWeightDialog) {
-        WeightUpdateDialog(
-            onDismiss = { showWeightDialog = false },
-            onConfirm = { newWeight ->
-                onUpdateWeight(newWeight)
-                showWeightDialog = false
+        AlertDialog(
+            onDismissRequest = { showWeightDialog = false },
+            containerColor = RpgPanel,
+            title = { Text("Registrar Peso", color = RpgNeonCyan) },
+            text = {
+                OutlinedTextField(
+                    value = newWeightInput,
+                    onValueChange = { newWeightInput = it },
+                    label = { Text("Nuevo peso (kg)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = RpgNeonCyan,
+                        focusedTextColor = Color.White
+                    )
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val w = newWeightInput.toFloatOrNull()
+                        if (w != null && w > 0) {
+                            onUpdateWeight(w)
+                            showWeightDialog = false
+                            newWeightInput = ""
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = RpgNeonCyan)
+                ) { Text("Guardar", color = Color.Black) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWeightDialog = false }) { Text("Cancelar") }
             }
         )
     }
 
+    // --- CONTENEDOR PRINCIPAL ---
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(RpgBackground)
-            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         // 1. HEADER
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Button(
-                onClick = onBack,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
-            ) { Text("🔙") }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                "ESTADÍSTICAS",
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 2.sp
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 2. TARJETA DE PERSONAJE
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(2.dp, Color.DarkGray, RoundedCornerShape(8.dp))
-                .background(RpgPanel, RoundedCornerShape(8.dp))
-                .padding(16.dp)
-        ) {
-            Column {
-                Text(
-                    text = player.name.uppercase(),
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
-                )
-                Text(
-                    text = "Nivel ${player.level} ${player.gender}",
-                    color = Color.LightGray,
-                    fontSize = 14.sp
-                )
-
-                Divider(color = Color.DarkGray, modifier = Modifier.padding(vertical = 12.dp))
-
-                RpgStatBar("FUERZA (STR)", player.strength, StatStrength)
-                RpgStatBar("AGILIDAD (AGI)", player.agility, StatAgility)
-                RpgStatBar("RESISTENCIA (STA)", player.stamina, StatStamina)
-                RpgStatBar("VOLUNTAD (WIL)", player.willpower, StatWillpower)
-                RpgStatBar("SUERTE (LUK)", player.luck, StatLuck)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 3. HISTORIAL DE PESO
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                "PROGRESO FÍSICO",
-                color = Color.Gray,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Volver",
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("ESTADÍSTICAS", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            }
 
-            SmallFloatingActionButton(
+            Button(
                 onClick = { showWeightDialog = true },
-                containerColor = RpgNeonCyan,
-                contentColor = Color.Black
+                colors = ButtonDefaults.buttonColors(containerColor = RpgNeonCyan),
+                contentPadding = PaddingValues(horizontal = 12.dp)
             ) {
-                Text("+", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Icon(Icons.Default.Add, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("PESO", color = Color.Black, fontWeight = FontWeight.Bold)
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-        WeightChart(history = player.measurementLogs) // Usamos la lista nueva de BodyLog
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // USAMOS LAZY COLUMN PARA QUE TODO SEA SCROLLEABLE Y ORDENADO
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 24.dp)
+        ) {
 
-        // 4. DATOS BÁSICOS (Peso e IMC)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            BioMetricCard("PESO", "${player.currentWeight} kg")
+            // ITEM 1: GRÁFICA DE EVOLUCIÓN
+            item {
+                Text("EVOLUCIÓN DE PESO", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
 
-            // Color del IMC dinámico
-            val bmiColor = when {
-                player.currentBmi < 18.5 -> StatAgility // Azul/Verde (Delgado)
-                player.currentBmi < 25 -> XpBarGreen    // Verde (Normal)
-                player.currentBmi < 30 -> StatStamina   // Amarillo (Sobrepeso)
-                else -> StatStrength                    // Rojo (Obesidad)
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = RpgPanel),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("ACTUAL", color = Color.Gray, fontSize = 10.sp)
+                                Text("${player.currentWeight} kg", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("IMC", color = Color.Gray, fontSize = 10.sp)
+                                val bmiColor = if(player.currentBmi < 25) XpBarGreen else if(player.currentBmi < 30) StatStamina else StatStrength
+                                Text(String.format("%.1f", player.currentBmi), color = bmiColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        WeightChart(history = player.measurementLogs)
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Tarjeta IMC Personalizada con color
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2C)), modifier = Modifier.width(105.dp)) {
-                Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("IMC", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    Text("%.1f".format(player.currentBmi), color = bmiColor, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            // ITEM 2: STATS RPG (Fuerza, Agilidad, etc.)
+            item {
+                Text("ATRIBUTOS DE COMBATE", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(Modifier.fillMaxWidth()) {
+                    StatBox("FUERZA", "${player.strength}", StatStrength, Modifier.weight(1f))
+                    StatBox("RESISTENCIA", "${player.stamina}", StatStamina, Modifier.weight(1f))
+                    StatBox("AGILIDAD", "${player.agility}", StatAgility, Modifier.weight(1f))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth()) {
+                    StatBox("VOLUNTAD", "${player.willpower}", StatWillpower, Modifier.weight(1f))
+                    StatBox("SUERTE", "${player.luck}", XpBarGreen, Modifier.weight(1f))
+                    Spacer(modifier = Modifier.weight(1f)) // Espaciador para cuadrar grid
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            // ITEM 3: COMPOSICIÓN CORPORAL (Tu lógica original recuperada)
+            if (player.currentBodyFat != null) {
+                item {
+                    Text("COMPOSICIÓN CORPORAL", color = RpgNeonCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = RpgPanel),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, RpgNeonCyan.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            // Grasa %
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("GRASA %", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("%.1f %%".format(player.currentBodyFat), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            // Divisor vertical
+                            Box(modifier = Modifier.width(1.dp).height(40.dp).background(Color.DarkGray))
+
+                            // Masa Magra
+                            val fatMass = player.currentWeight * (player.currentBodyFat / 100)
+                            val leanMass = player.currentWeight - fatMass
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("MASA MAGRA", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("%.1f kg".format(leanMass), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    // Medidas Extra (Cintura, Cuello...)
+                    val lastLog = player.measurementLogs.maxByOrNull { it.timestamp }
+                    if (lastLog != null && (lastLog.waist != null || lastLog.neck != null)) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (lastLog.neck != null) BioMetricCard("CUELLO", "${lastLog.neck} cm")
+                            if (lastLog.waist != null) BioMetricCard("CINTURA", "${lastLog.waist} cm")
+                            if (lastLog.hip != null) BioMetricCard("CADERA", "${lastLog.hip} cm")
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+            } else {
+                // Tip si no hay datos
+                item {
+                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2C).copy(alpha = 0.5f))) {
+                        Text("💡 Tip: Usa cinta métrica al registrar peso para ver % Grasa.", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(12.dp))
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
             }
 
-            // Cambio de peso total
-            val firstLog = player.measurementLogs.minByOrNull { it.timestamp }
-            val firstWeight = firstLog?.weight ?: player.currentWeight
-            val diff = player.currentWeight - firstWeight
-            val sign = if (diff > 0) "+" else ""
-            BioMetricCard("CAMBIO", "$sign%.1f kg".format(diff))
-        }
+            // ITEM 4: BOTÓN GRÁFICAS DE RENDIMIENTO
+            item {
+                Button(
+                    onClick = onNavigateToCharts,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = RpgPanel),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, RpgNeonCyan),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("📈  VER RENDIMIENTO DE EJERCICIOS", color = RpgNeonCyan, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
-        // 5. NUEVA SECCIÓN: COMPOSICIÓN CORPORAL (Solo si hay datos)
-        if (player.currentBodyFat != null) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                "COMPOSICIÓN CORPORAL",
-                color = RpgNeonCyan,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            // ITEM 5: HISTORIAL DETALLADO (LISTA)
+            item {
+                Text("HISTORIAL DE PESO", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = RpgPanel),
-                border = androidx.compose.foundation.BorderStroke(1.dp, RpgNeonCyan.copy(alpha = 0.5f))
-            ) {
+            // Aquí iteramos la lista dentro del LazyColumn
+            val history = player.measurementLogs.sortedByDescending { it.timestamp }
+            items(history) { log ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .background(RpgPanel, RoundedCornerShape(8.dp))
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceAround
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Grasa Corporal
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("GRASA %", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = "%.1f %%".format(player.currentBodyFat),
-                            color = Color.White,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    // Separador vertical
-                    Box(modifier = Modifier.width(1.dp).height(40.dp).background(Color.DarkGray))
-
-                    // Masa Magra (Calculada: Peso Total - (Peso * %Grasa))
-                    val fatMass = player.currentWeight * (player.currentBodyFat / 100)
-                    val leanMass = player.currentWeight - fatMass
-
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("MASA MAGRA", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = "%.1f kg".format(leanMass),
-                            color = Color.White,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Text(text = GameUtils.formatDate(log.timestamp), color = Color.LightGray)
+                    Text(text = "${log.weight} kg", color = RpgNeonCyan, fontWeight = FontWeight.Bold)
                 }
             }
-
-            // Mostrar detalles de medidas si existen en el último log
-            val lastLog = player.measurementLogs.maxByOrNull { it.timestamp }
-            if (lastLog != null && (lastLog.waist != null || lastLog.neck != null)) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (lastLog.neck != null) BioMetricCard("CUELLO", "${lastLog.neck} cm")
-                    if (lastLog.waist != null) BioMetricCard("CINTURA", "${lastLog.waist} cm")
-                    if (lastLog.hip != null) BioMetricCard("CADERA", "${lastLog.hip} cm")
-                }
-            }
-        } else {
-            // Si no tiene datos, mostramos invitación a medirse
-            Spacer(modifier = Modifier.height(16.dp))
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2C).copy(alpha = 0.5f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "💡 Tip: Usa una cinta métrica al registrar tu peso para desbloquear el análisis de Grasa Corporal.",
-                    color = Color.Gray,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(12.dp),
-                    lineHeight = 16.sp
-                )
-            }
         }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // 6. BOTÓN GRÁFICAS
-        Button(
-            onClick = onNavigateToCharts,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = RpgPanel),
-            border = androidx.compose.foundation.BorderStroke(1.dp, RpgNeonCyan),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Text(
-                "📈  VER RENDIMIENTO DE EJERCICIOS",
-                color = RpgNeonCyan,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
     }
 }
