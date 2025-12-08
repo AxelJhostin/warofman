@@ -1,4 +1,4 @@
-package com.negocio.warofmen.data.source // Ojo al paquete
+package com.negocio.warofmen.data.source
 
 import android.content.Context
 import androidx.datastore.preferences.core.*
@@ -10,26 +10,27 @@ import com.negocio.warofmen.data.model.PlayerCharacter
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-val Context.dataStore by preferencesDataStore(name = "game_settings_v2") // Cambié el nombre para "resetear" datos viejos y evitar crashes
+// Instancia única del DataStore
+val Context.dataStore by preferencesDataStore(name = "game_settings_v2")
 
 class GameStorage(private val context: Context) {
 
     private val gson = Gson()
 
     companion object {
-        // Claves Simples
+        // --- Claves de Identidad ---
         val NAME_KEY = stringPreferencesKey("user_name")
         val GENDER_KEY = stringPreferencesKey("user_gender")
         val AGE_KEY = intPreferencesKey("user_age")
         val HEIGHT_KEY = floatPreferencesKey("user_height")
         val IS_CREATED_KEY = booleanPreferencesKey("is_created")
 
-        // Claves de Estado Actual
+        // --- Claves de Estado Físico ---
         val WEIGHT_KEY = floatPreferencesKey("user_current_weight")
         val BMI_KEY = floatPreferencesKey("user_current_bmi")
-        val BODY_FAT_KEY = floatPreferencesKey("user_current_fat") // Nuevo
+        val BODY_FAT_KEY = floatPreferencesKey("user_current_fat")
 
-        // Claves RPG
+        // --- Claves RPG ---
         val LEVEL_KEY = intPreferencesKey("user_level")
         val XP_KEY = intPreferencesKey("user_xp")
         val MAX_XP_KEY = intPreferencesKey("user_max_xp")
@@ -39,19 +40,28 @@ class GameStorage(private val context: Context) {
         val WIL_KEY = intPreferencesKey("user_wil")
         val LUK_KEY = intPreferencesKey("user_luk")
 
-        // Claves COMPLEJAS (Listas JSON)
-        val MEASUREMENT_LOGS_KEY = stringPreferencesKey("json_measurement_logs") // Guardaremos el JSON aquí
-        val WORKOUT_LOGS_KEY = stringSetPreferencesKey("set_workout_logs") // Este lo dejamos simple por ahora
+        // --- Claves Complejas (Listas) ---
+        val MEASUREMENT_LOGS_KEY = stringPreferencesKey("json_measurement_logs")
+        val WORKOUT_LOGS_KEY = stringSetPreferencesKey("set_workout_logs")
         val INVENTORY_KEY = stringSetPreferencesKey("set_inventory")
 
+        // --- Claves de Racha (Streak) ---
         val STREAK_KEY = intPreferencesKey("user_streak")
         val LAST_WORKOUT_KEY = longPreferencesKey("user_last_workout")
+
+        // --- Claves de Notificaciones ---
+        val NOTIF_ENABLED_KEY = booleanPreferencesKey("notif_enabled")
+        val NOTIF_HOUR_KEY = intPreferencesKey("notif_hour")
+        val NOTIF_MINUTE_KEY = intPreferencesKey("notif_minute")
     }
 
+    // -------------------------------------------------------------------------
+    // 1. FLUJO DEL JUGADOR (Lectura Constante)
+    // -------------------------------------------------------------------------
     val getUserFlow: Flow<PlayerCharacter> = context.dataStore.data
         .map { preferences ->
 
-            // LÓGICA DE DESERIALIZACIÓN (JSON -> Lista de Objetos)
+            // Deserializar historial de peso
             val jsonMeasurements = preferences[MEASUREMENT_LOGS_KEY]
             val measurementList: List<BodyLog> = if (jsonMeasurements != null) {
                 val type = object : TypeToken<List<BodyLog>>() {}.type
@@ -69,7 +79,7 @@ class GameStorage(private val context: Context) {
 
                 currentWeight = preferences[WEIGHT_KEY] ?: 70f,
                 currentBmi = preferences[BMI_KEY] ?: 24.2f,
-                currentBodyFat = preferences[BODY_FAT_KEY], // Puede ser null
+                currentBodyFat = preferences[BODY_FAT_KEY],
 
                 level = preferences[LEVEL_KEY] ?: 1,
                 currentXp = preferences[XP_KEY] ?: 0,
@@ -80,16 +90,19 @@ class GameStorage(private val context: Context) {
                 willpower = preferences[WIL_KEY] ?: 5,
                 luck = preferences[LUK_KEY] ?: 5,
 
-                // Asignamos la lista recuperada del JSON
                 measurementLogs = measurementList,
-
                 workoutLogs = preferences[WORKOUT_LOGS_KEY]?.toList() ?: emptyList(),
                 inventory = preferences[INVENTORY_KEY]?.toList() ?: emptyList(),
+
+                // Racha
                 currentStreak = preferences[STREAK_KEY] ?: 0,
                 lastWorkoutDate = preferences[LAST_WORKOUT_KEY] ?: 0L
             )
         }
 
+    // -------------------------------------------------------------------------
+    // 2. GUARDAR JUGADOR
+    // -------------------------------------------------------------------------
     suspend fun savePlayer(player: PlayerCharacter) {
         context.dataStore.edit { preferences ->
             preferences[NAME_KEY] = player.name
@@ -113,7 +126,6 @@ class GameStorage(private val context: Context) {
             preferences[WIL_KEY] = player.willpower
             preferences[LUK_KEY] = player.luck
 
-            // LÓGICA DE SERIALIZACIÓN (Lista de Objetos -> JSON String)
             val jsonMeasurements = gson.toJson(player.measurementLogs)
             preferences[MEASUREMENT_LOGS_KEY] = jsonMeasurements
 
@@ -125,9 +137,42 @@ class GameStorage(private val context: Context) {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // 3. GESTIÓN DE NOTIFICACIONES (¡ESTO TE FALTABA!)
+    // -------------------------------------------------------------------------
+
+    // Leer configuración
+    val getNotificationSettings: Flow<NotificationSettings> = context.dataStore.data
+        .map { preferences ->
+            NotificationSettings(
+                isEnabled = preferences[NOTIF_ENABLED_KEY] ?: false,
+                hour = preferences[NOTIF_HOUR_KEY] ?: 18, // Por defecto 18:00
+                minute = preferences[NOTIF_MINUTE_KEY] ?: 0
+            )
+        }
+
+    // Guardar configuración
+    suspend fun saveNotificationSettings(isEnabled: Boolean, hour: Int, minute: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[NOTIF_ENABLED_KEY] = isEnabled
+            preferences[NOTIF_HOUR_KEY] = hour
+            preferences[NOTIF_MINUTE_KEY] = minute
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. RESET TOTAL
+    // -------------------------------------------------------------------------
     suspend fun clearAllData() {
         context.dataStore.edit { preferences ->
-            preferences.clear() // ¡Borrón y cuenta nueva!
+            preferences.clear()
         }
     }
 }
+
+// Clase de datos auxiliar (Fuera de la clase principal para facilitar acceso)
+data class NotificationSettings(
+    val isEnabled: Boolean = false,
+    val hour: Int = 18,
+    val minute: Int = 0
+)

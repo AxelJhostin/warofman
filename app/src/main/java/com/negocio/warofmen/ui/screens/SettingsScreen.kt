@@ -1,6 +1,8 @@
 package com.negocio.warofmen.ui.screens
 
+import android.app.TimePickerDialog
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,11 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.negocio.warofmen.ui.theme.*
 import com.negocio.warofmen.ui.viewmodel.SettingsViewModel
+import java.util.Calendar
 
 @Composable
 fun SettingsScreen(
@@ -25,8 +29,31 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onResetComplete: () -> Unit
 ) {
+    // 1. Observamos el estado real de las notificaciones (Hora y Switch)
+    val notifState by viewModel.notificationState.collectAsState()
+
     var showResetDialog by remember { mutableStateOf(false) }
-    var vibrationEnabled by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+
+    // Función para abrir el Reloj Nativo de Android
+    fun openTimePicker() {
+        val calendar = Calendar.getInstance()
+        val timePickerDialog = TimePickerDialog(
+            context,
+            { _, hourOfDay, minute ->
+                // Al elegir hora, actualizamos el ViewModel
+                viewModel.updateNotifications(
+                    isEnabled = true, // Si cambia la hora, asumimos que quiere activarlo
+                    hour = hourOfDay,
+                    minute = minute
+                )
+            },
+            notifState.hour, // Hora inicial
+            notifState.minute, // Minuto inicial
+            true // Formato 24h
+        )
+        timePickerDialog.show()
+    }
 
     if (showResetDialog) {
         AlertDialog(
@@ -53,17 +80,17 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(RpgBackground)
+            // .statusBarsPadding() <--- YA NO ES NECESARIO (Lo maneja MainActivity)
             .padding(16.dp)
     ) {
-        // HEADER MEJORADO
+        // HEADER
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // SOLUCIÓN 2: Botón de regreso elegante (Icono solo)
             IconButton(onClick = onBack) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack, // Flecha estándar de Android
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Volver",
                     tint = Color.White,
-                    modifier = Modifier.size(28.dp) // Un poco más grande
+                    modifier = Modifier.size(28.dp)
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
@@ -72,31 +99,72 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // SECCIÓN GENERAL
-        Text("GENERAL", color = RpgNeonCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        // --- SECCIÓN NOTIFICACIONES ---
+        Text("RECORDATORIO DIARIO", color = RpgNeonCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
 
-        SettingItem(
-            icon = Icons.Default.Notifications,
-            title = "Vibración y Efectos",
-            subtitle = "Feedback háptico al completar misiones",
-            trailing = {
-                Switch(
-                    checked = vibrationEnabled,
-                    onCheckedChange = { vibrationEnabled = it },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = RpgNeonCyan,
-                        checkedTrackColor = RpgPanel,
-                        uncheckedThumbColor = Color.Gray,
-                        uncheckedTrackColor = RpgPanel
+        Card(
+            colors = CardDefaults.cardColors(containerColor = RpgPanel),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                // Fila 1: Título y Switch
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Notifications, contentDescription = null, tint = Color.LightGray)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text("Activar Avisos", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+
+                    Switch(
+                        checked = notifState.isEnabled,
+                        onCheckedChange = { isChecked ->
+                            // Guardamos el cambio de switch manteniendo la hora actual
+                            viewModel.updateNotifications(isChecked, notifState.hour, notifState.minute)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = RpgNeonCyan,
+                            checkedTrackColor = RpgPanel,
+                            uncheckedThumbColor = Color.Gray,
+                            uncheckedTrackColor = RpgPanel
+                        )
                     )
-                )
+                }
+
+                // Fila 2: Selector de Hora (Solo visible si está activo)
+                if (notifState.isEnabled) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Divider(color = Color.DarkGray)
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { openTimePicker() }, // <--- Clic para cambiar hora
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text("Hora del aviso", color = Color.Gray, fontSize = 12.sp)
+                            Text("Toca para cambiar", color = Color.DarkGray, fontSize = 10.sp)
+                        }
+
+                        // Formato de hora 00:00
+                        val formattedTime = String.format("%02d:%02d", notifState.hour, notifState.minute)
+
+                        Text(
+                            text = formattedTime,
+                            color = RpgNeonCyan,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
-        )
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // SECCIÓN PELIGRO
+        // --- SECCIÓN PELIGRO ---
         Text("ZONA DE PELIGRO", color = Color.Red, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -110,33 +178,6 @@ fun SettingsScreen(
             Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
             Spacer(modifier = Modifier.width(8.dp))
             Text("REINICIAR PROGRESO", color = Color.Red, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-fun SettingItem(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    trailing: @Composable () -> Unit
-) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = RpgPanel),
-        shape = RoundedCornerShape(8.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, contentDescription = null, tint = Color.LightGray)
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, color = Color.White, fontWeight = FontWeight.Bold)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
-            }
-            trailing()
         }
     }
 }
