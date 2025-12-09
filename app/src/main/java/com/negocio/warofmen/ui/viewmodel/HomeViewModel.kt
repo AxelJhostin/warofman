@@ -7,14 +7,15 @@ import com.negocio.warofmen.core.util.GameUtils
 import com.negocio.warofmen.data.model.BodyLog
 import com.negocio.warofmen.data.model.PlayerCharacter
 import com.negocio.warofmen.data.model.Quest
+import com.negocio.warofmen.data.model.WorkoutLog // <--- NUEVO IMPORT
 import com.negocio.warofmen.data.repository.GameRepository
 import com.negocio.warofmen.data.source.QuestProvider
+import com.negocio.warofmen.data.source.MilestoneProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import com.negocio.warofmen.data.source.MilestoneProvider
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -116,9 +117,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         var leveledUp = false
 
-        // Comprobamos si la XP supera el máximo para subir de nivel
-        if (newXp >= newMaxXp) {
-            newXp -= newMaxXp // Restamos el costo del nivel (XP sobrante se queda)
+        // Bucle while por si gana tanta XP que sube 2 niveles de golpe
+        while (newXp >= newMaxXp) {
+            newXp -= newMaxXp // Restamos el costo del nivel
             newLevel += 1
             newMaxXp = (newMaxXp * 1.2).toInt() // El siguiente nivel es 20% más difícil
 
@@ -137,11 +138,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         // ---------------------------------------------------------
         val totalVolume = quest.sets.sum() // Suma total de reps o segundos
 
-        // Formato de guardado: "ID_MISION : TIMESTAMP : VOLUMEN"
-        val logEntry = "${quest.id}:$now:$totalVolume"
+        // CAMBIO AQUÍ: Creamos el objeto WorkoutLog en lugar del String antiguo
+        val newLog = WorkoutLog(
+            timestamp = now,
+            questId = quest.id,
+            questTitle = quest.title,
+            totalVolume = totalVolume,
+            xpEarned = xpWithBonus,
+            multiplier = multiplier
+        )
 
+        // Agregamos al inicio de la lista (para que el más reciente salga primero)
         val newWorkoutLogs = currentPlayer.workoutLogs.toMutableList()
-        newWorkoutLogs.add(logEntry)
+        newWorkoutLogs.add(0, newLog)
 
         // ---------------------------------------------------------
         // 5. FEEDBACK SENSORIAL (VIBRACIÓN Y DIÁLOGOS)
@@ -171,7 +180,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             luck = newLuk,
 
             // Historiales y Racha
-            workoutLogs = newWorkoutLogs,
+            workoutLogs = newWorkoutLogs, // Lista actualizada con objetos
             currentStreak = newStreak,
             lastWorkoutDate = now
         )

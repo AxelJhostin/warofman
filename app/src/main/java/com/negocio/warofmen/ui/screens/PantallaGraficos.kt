@@ -20,10 +20,11 @@ import com.negocio.warofmen.ui.components.ExerciseChart
 import com.negocio.warofmen.ui.components.StatBox
 import com.negocio.warofmen.data.source.QuestProvider
 import com.negocio.warofmen.ui.theme.*
+import com.negocio.warofmen.data.model.WorkoutLog
 
 @Composable
 fun PantallaGraficos(
-    workoutLogs: List<String>,
+    workoutLogs: List<WorkoutLog>,
     level: Int,
     onBack: () -> Unit
 ) {
@@ -35,12 +36,9 @@ fun PantallaGraficos(
         if (selectedQuest == null) emptyList()
         else {
             workoutLogs
-                .map { it.split(":") }
-                .filter { it.size == 3 && it[0].toInt() == selectedQuest!!.id }
-                .map {
-                    val time = it[1].toLong()
-                    val reps = it[2].toInt()
-                    Pair(time, reps)
+                .filter { it.questId == selectedQuest!!.id } // Filtramos por ID numérico
+                .map { log ->
+                    Pair(log.timestamp, log.totalVolume) // Sacamos los datos directamente
                 }
                 .sortedBy { it.first }
         }

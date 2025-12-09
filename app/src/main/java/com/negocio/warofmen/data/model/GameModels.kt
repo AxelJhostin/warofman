@@ -59,7 +59,7 @@ data class PlayerCharacter(
     val measurementLogs: List<BodyLog> = emptyList(),
 
     // Estos los mantenemos simples por ahora (String)
-    val workoutLogs: List<String> = emptyList(),
+    val workoutLogs: List<WorkoutLog> = emptyList(),
     val inventory: List<String> = emptyList(),
     val currentStreak: Int = 0,      // Días seguidos (Ej: 5)
     val lastWorkoutDate: Long = 0L
@@ -98,4 +98,14 @@ data class ExerciseFamily(
     val id: String,         // Ej: "push_family"
     val stat: String,       // Ej: "STR"
     val variants: List<ExerciseVariant> // Lista de 5 niveles (Novato -> Leyenda)
+)
+
+data class WorkoutLog(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val timestamp: Long,
+    val questId: Int,       // ID para identificar qué ejercicio fue
+    val questTitle: String, // Guardamos el nombre por si cambia después
+    val totalVolume: Int,   // Reps totales o Segundos totales
+    val xpEarned: Int,      // Cuánta XP te dio
+    val multiplier: Float   // Si usaste racha (ej: 1.2)
 )

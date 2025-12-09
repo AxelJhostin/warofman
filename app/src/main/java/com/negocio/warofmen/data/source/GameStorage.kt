@@ -7,6 +7,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.negocio.warofmen.data.model.BodyLog
 import com.negocio.warofmen.data.model.PlayerCharacter
+import com.negocio.warofmen.data.model.WorkoutLog // <--- Importante: Nueva importación
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -42,7 +43,11 @@ class GameStorage(private val context: Context) {
 
         // --- Claves Complejas (Listas) ---
         val MEASUREMENT_LOGS_KEY = stringPreferencesKey("json_measurement_logs")
-        val WORKOUT_LOGS_KEY = stringSetPreferencesKey("set_workout_logs")
+
+        // CAMBIO PRINCIPAL: Usamos una nueva clave String para guardar JSON,
+        // en lugar del antiguo StringSet que daba problemas.
+        val WORKOUT_LOGS_JSON_KEY = stringPreferencesKey("json_workout_logs_v2")
+
         val INVENTORY_KEY = stringSetPreferencesKey("set_inventory")
 
         // --- Claves de Racha (Streak) ---
@@ -70,6 +75,15 @@ class GameStorage(private val context: Context) {
                 emptyList()
             }
 
+            // CAMBIO: Deserializar historial de entrenamientos (Objetos WorkoutLog)
+            val jsonWorkouts = preferences[WORKOUT_LOGS_JSON_KEY]
+            val workoutList: List<WorkoutLog> = if (jsonWorkouts != null) {
+                val type = object : TypeToken<List<WorkoutLog>>() {}.type
+                gson.fromJson(jsonWorkouts, type)
+            } else {
+                emptyList()
+            }
+
             PlayerCharacter(
                 name = preferences[NAME_KEY] ?: "",
                 gender = preferences[GENDER_KEY] ?: "Guerrero",
@@ -91,7 +105,10 @@ class GameStorage(private val context: Context) {
                 luck = preferences[LUK_KEY] ?: 5,
 
                 measurementLogs = measurementList,
-                workoutLogs = preferences[WORKOUT_LOGS_KEY]?.toList() ?: emptyList(),
+
+                // Asignamos la lista de objetos reales
+                workoutLogs = workoutList,
+
                 inventory = preferences[INVENTORY_KEY]?.toList() ?: emptyList(),
 
                 // Racha
@@ -129,7 +146,10 @@ class GameStorage(private val context: Context) {
             val jsonMeasurements = gson.toJson(player.measurementLogs)
             preferences[MEASUREMENT_LOGS_KEY] = jsonMeasurements
 
-            preferences[WORKOUT_LOGS_KEY] = player.workoutLogs.toSet()
+            // CAMBIO: Serializar la lista de WorkoutLog a JSON
+            val jsonWorkouts = gson.toJson(player.workoutLogs)
+            preferences[WORKOUT_LOGS_JSON_KEY] = jsonWorkouts
+
             preferences[INVENTORY_KEY] = player.inventory.toSet()
 
             preferences[STREAK_KEY] = player.currentStreak
@@ -138,7 +158,7 @@ class GameStorage(private val context: Context) {
     }
 
     // -------------------------------------------------------------------------
-    // 3. GESTIÓN DE NOTIFICACIONES (¡ESTO TE FALTABA!)
+    // 3. GESTIÓN DE NOTIFICACIONES
     // -------------------------------------------------------------------------
 
     // Leer configuración
@@ -170,7 +190,7 @@ class GameStorage(private val context: Context) {
     }
 }
 
-// Clase de datos auxiliar (Fuera de la clase principal para facilitar acceso)
+// Clase de datos auxiliar
 data class NotificationSettings(
     val isEnabled: Boolean = false,
     val hour: Int = 18,
