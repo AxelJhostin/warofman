@@ -6,8 +6,9 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.negocio.warofmen.data.model.BodyLog
+import com.negocio.warofmen.data.model.Challenge
 import com.negocio.warofmen.data.model.PlayerCharacter
-import com.negocio.warofmen.data.model.WorkoutLog // <--- Importante: Nueva importación
+import com.negocio.warofmen.data.model.WorkoutLog
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -41,12 +42,10 @@ class GameStorage(private val context: Context) {
         val WIL_KEY = intPreferencesKey("user_wil")
         val LUK_KEY = intPreferencesKey("user_luk")
 
-        // --- Claves Complejas (Listas) ---
+        // --- Claves Complejas (Listas y Objetos JSON) ---
         val MEASUREMENT_LOGS_KEY = stringPreferencesKey("json_measurement_logs")
-
-        // CAMBIO PRINCIPAL: Usamos una nueva clave String para guardar JSON,
-        // en lugar del antiguo StringSet que daba problemas.
         val WORKOUT_LOGS_JSON_KEY = stringPreferencesKey("json_workout_logs_v2")
+        val ACTIVE_CHALLENGE_JSON_KEY = stringPreferencesKey("json_active_challenge")
 
         val INVENTORY_KEY = stringSetPreferencesKey("set_inventory")
 
@@ -66,7 +65,7 @@ class GameStorage(private val context: Context) {
     val getUserFlow: Flow<PlayerCharacter> = context.dataStore.data
         .map { preferences ->
 
-            // Deserializar historial de peso
+            // A. Deserializar historial de peso
             val jsonMeasurements = preferences[MEASUREMENT_LOGS_KEY]
             val measurementList: List<BodyLog> = if (jsonMeasurements != null) {
                 val type = object : TypeToken<List<BodyLog>>() {}.type
@@ -75,7 +74,7 @@ class GameStorage(private val context: Context) {
                 emptyList()
             }
 
-            // CAMBIO: Deserializar historial de entrenamientos (Objetos WorkoutLog)
+            // B. Deserializar historial de entrenamientos
             val jsonWorkouts = preferences[WORKOUT_LOGS_JSON_KEY]
             val workoutList: List<WorkoutLog> = if (jsonWorkouts != null) {
                 val type = object : TypeToken<List<WorkoutLog>>() {}.type
@@ -84,6 +83,15 @@ class GameStorage(private val context: Context) {
                 emptyList()
             }
 
+            // C. Deserializar el Reto Activo
+            val jsonChallenge = preferences[ACTIVE_CHALLENGE_JSON_KEY]
+            val activeChallenge: Challenge? = if (jsonChallenge != null) {
+                gson.fromJson(jsonChallenge, Challenge::class.java)
+            } else {
+                null
+            }
+
+            // Construir el objeto PlayerCharacter
             PlayerCharacter(
                 name = preferences[NAME_KEY] ?: "",
                 gender = preferences[GENDER_KEY] ?: "Guerrero",
@@ -105,13 +113,11 @@ class GameStorage(private val context: Context) {
                 luck = preferences[LUK_KEY] ?: 5,
 
                 measurementLogs = measurementList,
-
-                // Asignamos la lista de objetos reales
                 workoutLogs = workoutList,
+                activeChallenge = activeChallenge,
 
                 inventory = preferences[INVENTORY_KEY]?.toList() ?: emptyList(),
 
-                // Racha
                 currentStreak = preferences[STREAK_KEY] ?: 0,
                 lastWorkoutDate = preferences[LAST_WORKOUT_KEY] ?: 0L
             )
@@ -143,12 +149,21 @@ class GameStorage(private val context: Context) {
             preferences[WIL_KEY] = player.willpower
             preferences[LUK_KEY] = player.luck
 
+            // Guardar Historial de Peso (JSON)
             val jsonMeasurements = gson.toJson(player.measurementLogs)
             preferences[MEASUREMENT_LOGS_KEY] = jsonMeasurements
 
-            // CAMBIO: Serializar la lista de WorkoutLog a JSON
+            // Guardar Historial de Entrenamientos (JSON)
             val jsonWorkouts = gson.toJson(player.workoutLogs)
             preferences[WORKOUT_LOGS_JSON_KEY] = jsonWorkouts
+
+            // Guardar Reto Activo (JSON o borrar si es null)
+            if (player.activeChallenge != null) {
+                val jsonChallenge = gson.toJson(player.activeChallenge)
+                preferences[ACTIVE_CHALLENGE_JSON_KEY] = jsonChallenge
+            } else {
+                preferences.remove(ACTIVE_CHALLENGE_JSON_KEY)
+            }
 
             preferences[INVENTORY_KEY] = player.inventory.toSet()
 

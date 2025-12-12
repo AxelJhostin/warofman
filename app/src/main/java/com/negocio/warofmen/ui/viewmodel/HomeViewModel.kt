@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.negocio.warofmen.core.util.GameUtils
 import com.negocio.warofmen.data.model.BodyLog
+import com.negocio.warofmen.data.model.Challenge
 import com.negocio.warofmen.data.model.PlayerCharacter
 import com.negocio.warofmen.data.model.Quest
 import com.negocio.warofmen.data.model.WorkoutLog // <--- NUEVO IMPORT
@@ -211,12 +212,33 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         // 3. Actualizar la lista de registros
         val newHistory = currentPlayer.measurementLogs.toMutableList()
         newHistory.add(newLog)
+        var challenge = currentPlayer.activeChallenge
+        var xpReward = 0
+        var challengeCompleted = false
+
+        if (challenge != null && !challenge.isCompleted && !challenge.isFailed) {
+            // Verificar si cumplió (Usamos la misma lógica: bajar o subir)
+            val isSuccess = if (challenge.startWeight > challenge.targetWeight) {
+                newWeight <= challenge.targetWeight // Bajar: Peso actual menor o igual al target
+            } else {
+                newWeight >= challenge.targetWeight // Subir: Peso actual mayor o igual
+            }
+
+            if (isSuccess) {
+                challenge = challenge.copy(isCompleted = true)
+                xpReward = challenge.rewardXp
+                challengeCompleted = true
+            }
+        }
+
 
         // 4. Actualizar al jugador
         val updatedPlayer = currentPlayer.copy(
             currentWeight = newWeight,
             currentBmi = newBmi,
-            measurementLogs = newHistory
+            measurementLogs = newHistory,
+            activeChallenge = challenge,
+            currentXp = currentPlayer.currentXp + xpReward // Sumamos XP si ganó
         )
 
         updatePlayer(updatedPlayer)
@@ -238,5 +260,35 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun loadQuests(level: Int) {
         _quests.value = QuestProvider.getQuestsForLevel(level)
+    }
+
+    fun createChallenge(targetWeight: Float, deadline: Long, description: String) {
+        val currentPlayer = _gameState.value
+        val now = System.currentTimeMillis()
+
+        // Calculamos la duración aproximada solo para dar XP extra (opcional)
+        val diff = deadline - now
+        val days = (diff / (1000 * 60 * 60 * 24)).toInt()
+        val bonusXp = 1000 + (days * 10) // 10 XP extra por día de duración
+
+        val newChallenge = Challenge(
+            targetWeight = targetWeight,
+            startWeight = currentPlayer.currentWeight,
+            startDate = now,
+            deadline = deadline, // Usamos la fecha directa del calendario
+            description = description,
+            rewardXp = bonusXp
+        )
+
+        // Guardamos
+        val updatedPlayer = currentPlayer.copy(activeChallenge = newChallenge)
+        updatePlayer(updatedPlayer)
+    }
+
+    fun cancelChallenge() {
+        val currentPlayer = _gameState.value
+        // Al ponerlo en null, el Storage lo borrará automáticamente
+        val updatedPlayer = currentPlayer.copy(activeChallenge = null)
+        updatePlayer(updatedPlayer)
     }
 }

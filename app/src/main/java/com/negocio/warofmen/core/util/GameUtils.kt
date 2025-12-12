@@ -134,4 +134,50 @@ object GameUtils {
         return fmt.format(date) == fmt.format(yesterday)
     }
 
+    /**
+     * Convierte una fecha límite en un texto de cuenta regresiva.
+     * Ej: "14d 05h 20m 10s"
+     */
+    fun formatCountdown(deadline: Long): String {
+        val now = System.currentTimeMillis()
+        val diff = deadline - now
+
+        if (diff <= 0) return "00:00:00" // ¡Tiempo agotado!
+
+        val seconds = (diff / 1000) % 60
+        val minutes = (diff / (1000 * 60)) % 60
+        val hours = (diff / (1000 * 60 * 60)) % 24
+        val days = diff / (1000 * 60 * 60 * 24)
+
+        return if (days > 7) {
+            val weeks = days / 7
+            val remainingDays = days % 7
+            "${weeks} SEM, ${remainingDays} DÍAS"
+        } else if (days > 0) {
+            "${days}d ${hours}h ${minutes}m"
+        } else {
+            // Cuando falta menos de un día, mostramos el segundero para meter presión
+            String.format("%02d:%02d:%02d", hours, minutes, seconds)
+        }
+    }
+
+    /**
+     * Calcula el progreso del reto (0.0 a 1.0).
+     * Funciona tanto para BAJAR de peso como para SUBIR.
+     */
+    fun calculateChallengeProgress(start: Float, current: Float, target: Float): Float {
+        // Caso: Bajar de peso (Ej: 80 -> 70)
+        if (start > target) {
+            val totalToLose = start - target
+            val lostSoFar = start - current
+            return (lostSoFar / totalToLose).coerceIn(0f, 1f)
+        }
+        // Caso: Subir de peso (Ej: 60 -> 70)
+        else {
+            val totalToGain = target - start
+            val gainedSoFar = current - start
+            return (gainedSoFar / totalToGain).coerceIn(0f, 1f)
+        }
+    }
+
 }

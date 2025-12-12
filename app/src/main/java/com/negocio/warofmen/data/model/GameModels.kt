@@ -62,7 +62,8 @@ data class PlayerCharacter(
     val workoutLogs: List<WorkoutLog> = emptyList(),
     val inventory: List<String> = emptyList(),
     val currentStreak: Int = 0,      // Días seguidos (Ej: 5)
-    val lastWorkoutDate: Long = 0L
+    val lastWorkoutDate: Long = 0L,
+    val activeChallenge: Challenge? = null,
 )
 
 // Clase Item (Objeto del juego)
@@ -108,4 +109,16 @@ data class WorkoutLog(
     val totalVolume: Int,   // Reps totales o Segundos totales
     val xpEarned: Int,      // Cuánta XP te dio
     val multiplier: Float   // Si usaste racha (ej: 1.2)
+)
+
+data class Challenge(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val targetWeight: Float,      // Meta (Ej: 75.0 kg)
+    val startWeight: Float,       // Peso inicial (Ej: 80.0 kg)
+    val startDate: Long,          // Fecha inicio (Timestamp)
+    val deadline: Long,           // Fecha fin (Timestamp)
+    val rewardXp: Int = 1000,     // XP por cumplir
+    val description: String,      // Ej: "Operación Verano"
+    val isCompleted: Boolean = false,
+    val isFailed: Boolean = false // Si se acabó el tiempo
 )
