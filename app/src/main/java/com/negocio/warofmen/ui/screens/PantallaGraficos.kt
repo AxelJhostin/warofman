@@ -52,7 +52,6 @@ fun PantallaGraficos(
     ) {
         // HEADER
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // SOLUCIÓN 2: Icono limpio en lugar de botón gris
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -116,10 +115,26 @@ fun PantallaGraficos(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                StatBox("MÁXIMO", "${chartData.maxOf { it.second }}")
-                StatBox("TOTAL SESIONES", "${chartData.size}")
-                StatBox("ÚLTIMO", "${chartData.last().second}")
+            // --- AQUÍ ESTÁ EL CAMBIO VISUAL ---
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp) // Espacio uniforme entre cuadros
+            ) {
+                StatBox(
+                    label = "MÁXIMO",
+                    value = "${chartData.maxOf { it.second }}",
+                    modifier = Modifier.weight(1f) // Ocupa 33%
+                )
+                StatBox(
+                    label = "SESIONES", // Texto más corto
+                    value = "${chartData.size}",
+                    modifier = Modifier.weight(1f) // Ocupa 33%
+                )
+                StatBox(
+                    label = "ÚLTIMO",
+                    value = "${chartData.last().second}",
+                    modifier = Modifier.weight(1f) // Ocupa 33%
+                )
             }
 
         } else {
