@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,10 +39,12 @@ fun PantallaJuego(
     val quests by viewModel.quests.collectAsState()
     val showLevelUp by viewModel.showLevelUpDialog.collectAsState()
 
-    // Estado local para mostrar/ocultar el diálogo de "Crear Reto"
-    var showChallengeDialog by remember { mutableStateOf(false) }
+    // Estados Locales
+    var showChallengeDialog by remember { mutableStateOf(false) } // Para CREAR
+    var showCancelDialog by remember { mutableStateOf(false) }    // Para BORRAR
 
     // 2. DIÁLOGOS
+
     // A. Subida de Nivel
     if (showLevelUp) {
         LevelUpDialog(level = gameState.level) {
@@ -49,14 +52,45 @@ fun PantallaJuego(
         }
     }
 
-    // B. Crear Nuevo Juramento (Reto)
+    // B. Crear Nuevo Juramento
     if (showChallengeDialog) {
         CreateChallengeDialog(
             onDismiss = { showChallengeDialog = false },
-            // CAMBIO: Ahora recibimos 'deadline' en vez de 'days'
             onCreate = { target, deadline, desc ->
                 viewModel.createChallenge(target, deadline, desc)
                 showChallengeDialog = false
+            }
+        )
+    }
+
+    // C. Cancelar Juramento (Alerta de Seguridad)
+    if (showCancelDialog) {
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = false },
+            containerColor = RpgPanel,
+            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = Color.Red) },
+            title = { Text("¿ABANDONAR JURAMENTO?", color = Color.White, fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "Si cancelas ahora, perderás el progreso de este reto. No hay penalización, pero el honor del guerrero se mancha.",
+                    color = Color.Gray
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.cancelChallenge() // <--- Llamada al ViewModel
+                        showCancelDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("ABANDONAR", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelDialog = false }) {
+                    Text("MANTENER", color = Color.White)
+                }
             }
         )
     }
@@ -67,20 +101,19 @@ fun PantallaJuego(
             .fillMaxSize()
             .background(RpgBackground)
     ) {
-        // --- HEADER FIJO (Panel Superior) ---
+        // --- HEADER FIJO ---
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(RpgPanel)
                 .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp)
         ) {
-            // Fila Superior: Datos y Botones
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // A. Nombre y Clase
+                // Nombre
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = gameState.name.uppercase(),
@@ -97,9 +130,8 @@ fun PantallaJuego(
                     )
                 }
 
-                // B. ICONO DE RACHA (STREAK) 🔥
+                // Racha
                 val streakColor = if (gameState.currentStreak > 0) Color(0xFFFF5722) else Color.Gray
-
                 Surface(
                     color = streakColor.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(12.dp),
@@ -114,48 +146,36 @@ fun PantallaJuego(
                     ) {
                         Text("🔥", fontSize = 16.sp)
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "${gameState.currentStreak}",
-                            color = streakColor,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(text = "${gameState.currentStreak}", color = streakColor, fontWeight = FontWeight.Bold)
                     }
                 }
 
-                // C. Botón Ajustes
+                // Ajustes
                 IconButton(onClick = onOpenSettings) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Ajustes",
-                        tint = Color.Gray
-                    )
+                    Icon(Icons.Default.Settings, contentDescription = "Ajustes", tint = Color.Gray)
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // D. Barra de XP
             XpProgressBar(gameState.currentXp, gameState.maxXp, gameState.level)
         }
 
-        // --- CONTENIDO SCROLLEABLE (Retos + Misiones) ---
-        // Usamos LazyColumn para que todo lo de abajo haga scroll junto si la pantalla es chica
+        // --- CONTENIDO SCROLLEABLE ---
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(bottom = 80.dp) // Espacio para que no se tape con botones flotantes
+            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
-            // ITEM 1: SECCIÓN DE JURAMENTO (RETO)
+            // ITEM 1: SECCIÓN DE JURAMENTO
             item {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (gameState.activeChallenge != null) {
-                    // Si hay reto, mostramos la tarjeta activa (con cronómetro)
                     ActiveChallengeCard(
                         challenge = gameState.activeChallenge!!,
-                        currentWeight = gameState.currentWeight
+                        currentWeight = gameState.currentWeight,
+                        onLongPress = { showCancelDialog = true } // <--- Activador del diálogo
                     )
                 } else {
-                    // Si no hay reto, mostramos el botón para crear uno
                     EmptyChallengeCard(
                         onClick = { showChallengeDialog = true }
                     )

@@ -2,7 +2,10 @@ package com.negocio.warofmen.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,12 +32,14 @@ import java.util.Date
 import java.util.Locale
 
 // ----------------------------------------------------------------
-// 1. TARJETA DE RETO ACTIVO (Sin cambios, igual que antes)
+// 1. TARJETA DE RETO ACTIVO (MODIFICADA CON LONG PRESS)
 // ----------------------------------------------------------------
+@OptIn(ExperimentalFoundationApi::class) // Necesario para combinedClickable
 @Composable
 fun ActiveChallengeCard(
     challenge: Challenge,
-    currentWeight: Float
+    currentWeight: Float,
+    onLongPress: () -> Unit // <--- NUEVO CALLBACK
 ) {
     var timeLeftString by remember { mutableStateOf(GameUtils.formatCountdown(challenge.deadline)) }
 
@@ -56,12 +61,18 @@ fun ActiveChallengeCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            // CAMBIO: Detectar pulsación larga
+            .combinedClickable(
+                onClick = { /* No hacemos nada al click simple */ },
+                onLongClick = onLongPress // <--- AQUÍ SE ACTIVA EL BORRADO
+            ),
         colors = CardDefaults.cardColors(containerColor = RpgPanel),
         border = BorderStroke(1.dp, RpgNeonCyan.copy(alpha = 0.6f)),
         shape = RoundedCornerShape(12.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -90,6 +101,7 @@ fun ActiveChallengeCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Body
             Text(
                 text = challenge.description.uppercase(),
                 color = Color.White,
@@ -109,6 +121,7 @@ fun ActiveChallengeCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Progress Bar
             LinearProgressIndicator(
                 progress = { animatedProgress },
                 modifier = Modifier.fillMaxWidth().height(8.dp),
@@ -118,6 +131,7 @@ fun ActiveChallengeCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Footer info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -125,6 +139,15 @@ fun ActiveChallengeCard(
                 Text("${challenge.startWeight}kg", color = Color.Gray, fontSize = 12.sp)
                 Text("OBJETIVO: ${challenge.targetWeight}kg", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
             }
+
+            // Pista visual para el usuario (opcional)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "(Mantén presionado para cancelar)",
+                color = Color.Gray.copy(alpha = 0.5f),
+                fontSize = 10.sp,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
         }
     }
 }
@@ -157,25 +180,22 @@ fun EmptyChallengeCard(onClick: () -> Unit) {
 }
 
 // ----------------------------------------------------------------
-// 3. DIÁLOGO DE CREACIÓN (¡CAMBIO MAYOR AQUÍ!)
+// 3. DIÁLOGO DE CREACIÓN (Con DatePicker)
 // ----------------------------------------------------------------
-@OptIn(ExperimentalMaterial3Api::class) // Necesario para DatePicker
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateChallengeDialog(
     onDismiss: () -> Unit,
-    onCreate: (target: Float, deadline: Long, desc: String) -> Unit // Ahora pide deadline (Long)
+    onCreate: (target: Float, deadline: Long, desc: String) -> Unit
 ) {
     var targetInput by remember { mutableStateOf("") }
     var descInput by remember { mutableStateOf("") }
 
-    // Estados para el Calendario
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
 
-    // Formateador de fecha para mostrar bonito
     val dateFormatter = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
 
-    // Si abren el selector de fecha
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState()
         DatePickerDialog(
@@ -216,7 +236,6 @@ fun CreateChallengeDialog(
                 Text("Define tu meta y fecha límite. La disciplina te recompensará.", color = Color.Gray, fontSize = 12.sp)
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 1. Input Meta Peso
                 OutlinedTextField(
                     value = targetInput,
                     onValueChange = { targetInput = it },
@@ -232,7 +251,6 @@ fun CreateChallengeDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 2. Selector de Fecha (Simula ser un TextField pero no se escribe)
                 val dateText = if (selectedDateMillis != null) {
                     dateFormatter.format(Date(selectedDateMillis!!))
                 } else {
@@ -241,17 +259,16 @@ fun CreateChallengeDialog(
 
                 OutlinedTextField(
                     value = dateText,
-                    onValueChange = { }, // ReadOnly
+                    onValueChange = { },
                     label = { Text("Fecha Límite") },
-                    readOnly = true, // No deja escribir, solo tocar
+                    readOnly = true,
                     trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, tint = RpgNeonCyan) },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = RpgNeonCyan,
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White
                     ),
-                    modifier = Modifier.clickable { showDatePicker = true }, // Al tocar, abre calendario
-                    // Truco para que el click funcione sobre todo el campo:
+                    modifier = Modifier.clickable { showDatePicker = true },
                     interactionSource = remember { MutableInteractionSource() }.also { interactionSource ->
                         LaunchedEffect(interactionSource) {
                             interactionSource.interactions.collect {
@@ -265,7 +282,6 @@ fun CreateChallengeDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 3. Input Descripción
                 OutlinedTextField(
                     value = descInput,
                     onValueChange = { descInput = it },
@@ -284,7 +300,6 @@ fun CreateChallengeDialog(
                 onClick = {
                     val target = targetInput.toFloatOrNull()
                     val deadline = selectedDateMillis
-                    // Validamos que haya peso, fecha y que la fecha sea futura
                     if (target != null && deadline != null && deadline > System.currentTimeMillis() && descInput.isNotEmpty()) {
                         onCreate(target, deadline, descInput)
                     }
