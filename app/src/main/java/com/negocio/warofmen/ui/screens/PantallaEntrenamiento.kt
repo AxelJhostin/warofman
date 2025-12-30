@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.negocio.warofmen.core.util.SoundManager
 import com.negocio.warofmen.data.model.ExerciseType
 import com.negocio.warofmen.ui.theme.*
 import com.negocio.warofmen.ui.viewmodel.HomeViewModel
@@ -48,24 +49,33 @@ fun PantallaEntrenamiento(
 
     // --- LÓGICA DEL BUCLE DE TIEMPO (Engine) ---
     LaunchedEffect(isTimerActive, isResting) {
-        // Caso A: Ejercicio por Tiempo (Plancha, Wall-sit)
+        // Caso A: Ejercicio por Tiempo
         while (isTimerActive && currentTargetValue > 0 && !isResting) {
             delay(1000L)
+
+            // SONIDO: Bip en los últimos 3 segundos
+            if (currentTargetValue <= 4 && currentTargetValue > 1) { // 3, 2, 1
+                SoundManager.playBeep()
+            }
+            // SONIDO: Final
+            if (currentTargetValue == 1) {
+                SoundManager.playSuccess()
+            }
+
             currentTargetValue--
         }
-        // Caso B: Tiempo de Descanso entre series
+
+        // Caso B: Tiempo de Descanso
         while (isResting && restTimer > 0) {
             delay(1000L)
-            restTimer--
-            if (restTimer == 0) {
-                // Fin del descanso -> Siguiente serie
-                isResting = false
-                restTimer = quest.restSeconds
-                if (currentSetIndex < quest.sets.size - 1) {
-                    currentSetIndex++
-                    currentTargetValue = quest.sets[currentSetIndex]
-                }
+
+            // SONIDO: Bip para avisar que el descanso termina
+            if (restTimer <= 4 && restTimer > 1) {
+                SoundManager.playBeep()
             }
+
+            restTimer--
+            // ... resto del código ...
         }
     }
 

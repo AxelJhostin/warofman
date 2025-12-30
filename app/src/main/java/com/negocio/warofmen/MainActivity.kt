@@ -44,10 +44,13 @@ import com.negocio.warofmen.ui.screens.PantallaJuego
 import com.negocio.warofmen.ui.screens.SettingsScreen
 import com.negocio.warofmen.ui.screens.PantallaRacha // Nueva Pantalla
 
+//Sonidos
+import com.negocio.warofmen.core.util.SoundManager
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        SoundManager.init(applicationContext)
         enableEdgeToEdge()
 
         setContent {
@@ -210,5 +213,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        // Liberar memoria de audio al cerrar
+        SoundManager.release()
     }
 }
