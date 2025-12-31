@@ -32,7 +32,8 @@ fun PantallaJuego(
     viewModel: HomeViewModel,
     onStartQuest: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenStreak: () -> Unit
+    onOpenStreak: () -> Unit,
+    onOpenChallengeDetail: () -> Unit
 ) {
     // 1. Observamos los estados
     val gameState by viewModel.gameState.collectAsState()
@@ -173,6 +174,7 @@ fun PantallaJuego(
                     ActiveChallengeCard(
                         challenge = gameState.activeChallenge!!,
                         currentWeight = gameState.currentWeight,
+                        onClick = onOpenChallengeDetail,
                         onLongPress = { showCancelDialog = true } // <--- Activador del diálogo
                     )
                 } else {

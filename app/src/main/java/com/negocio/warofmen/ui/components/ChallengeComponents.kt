@@ -30,6 +30,7 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.Calendar
 
 // ----------------------------------------------------------------
 // 1. TARJETA DE RETO ACTIVO (MODIFICADA CON LONG PRESS)
@@ -39,7 +40,8 @@ import java.util.Locale
 fun ActiveChallengeCard(
     challenge: Challenge,
     currentWeight: Float,
-    onLongPress: () -> Unit // <--- NUEVO CALLBACK
+    onClick: () -> Unit,
+    onLongPress: () -> Unit
 ) {
     var timeLeftString by remember { mutableStateOf(GameUtils.formatCountdown(challenge.deadline)) }
 
@@ -64,7 +66,7 @@ fun ActiveChallengeCard(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             // CAMBIO: Detectar pulsación larga
             .combinedClickable(
-                onClick = { /* No hacemos nada al click simple */ },
+                onClick = onClick,
                 onLongClick = onLongPress // <--- AQUÍ SE ACTIVA EL BORRADO
             ),
         colors = CardDefaults.cardColors(containerColor = RpgPanel),
@@ -197,7 +199,25 @@ fun CreateChallengeDialog(
     val dateFormatter = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
 
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState()
+        val datePickerState = rememberDatePickerState(
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    // Solo permite fechas a partir de HOY
+                    val today = Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+                    return utcTimeMillis >= today
+                }
+
+                override fun isSelectableYear(year: Int): Boolean {
+                    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+                    return year >= currentYear
+                }
+            }
+        )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {

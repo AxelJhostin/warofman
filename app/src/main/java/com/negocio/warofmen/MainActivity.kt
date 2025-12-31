@@ -46,6 +46,7 @@ import com.negocio.warofmen.ui.screens.PantallaRacha // Nueva Pantalla
 
 //Sonidos
 import com.negocio.warofmen.core.util.SoundManager
+import com.negocio.warofmen.ui.screens.PantallaDetalleReto
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -110,6 +111,9 @@ class MainActivity : ComponentActivity() {
                                                 // CONEXIÓN A RACHAS (NUEVO)
                                                 onOpenStreak = {
                                                     navController.navigate(AppScreens.Streak.route)
+                                                },
+                                                onOpenChallengeDetail = {
+                                                    navController.navigate("challenge_detail")
                                                 }
                                             )
 
@@ -205,6 +209,14 @@ class MainActivity : ComponentActivity() {
                             composable(AppScreens.Streak.route) {
                                 PantallaRacha(
                                     currentStreak = gameState.currentStreak,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+
+                            // --- RUTA: DETALLE RETO ---
+                            composable("challenge_detail") { // O usa AppScreens.ChallengeDetail.route
+                                PantallaDetalleReto(
+                                    viewModel = homeViewModel,
                                     onBack = { navController.popBackStack() }
                                 )
                             }

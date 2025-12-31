@@ -9,4 +9,5 @@ sealed class AppScreens(val route: String) {
     object Charts : AppScreens("charts_screen")
     object Settings : AppScreens("settings_screen")
     object Streak : AppScreens("streak_screen")
+    object ChallengeDetail : AppScreens("challenge_detail")
 }
