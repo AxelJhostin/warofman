@@ -13,12 +13,40 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.axeljhostin.warofmen.MainActivity
 import com.axeljhostin.warofmen.R
-import kotlin.random.Random // <--- Necesario para la aleatoriedad
+import com.axeljhostin.warofmen.core.util.NotificationScheduler
+import com.axeljhostin.warofmen.data.source.GameStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 class DailyReminderReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        showNotification(context)
+        when (intent.action) {
+            Intent.ACTION_BOOT_COMPLETED -> rescheduleAlarm(context)
+            else -> showNotification(context)
+        }
+    }
+
+    private fun rescheduleAlarm(context: Context) {
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val settings = GameStorage(context).getNotificationSettings.first()
+                if (settings.isEnabled) {
+                    NotificationScheduler.scheduleDailyReminder(
+                        context = context,
+                        isEnabled = true,
+                        hour = settings.hour,
+                        minute = settings.minute
+                    )
+                }
+            } finally {
+                pendingResult.finish()
+            }
+        }
     }
 
     private fun showNotification(context: Context) {
