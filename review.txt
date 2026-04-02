@@ -1,0 +1,661 @@
+﻿package com.negocio.warofmen.data.model
+
+// Enum para tipos de items
+enum class ItemType { WEAPON, ARMOR, ACCESSORY }
+
+// Enum para tipos de ejercicio
+enum class ExerciseType { REPS, TIMER }
+
+// --- NUEVO: REGISTRO CORPORAL DETALLADO ---
+// Esto guarda la "foto" de tu cuerpo en un momento dado
+data class BodyLog(
+    val timestamp: Long,
+
+    // 1. Obligatorio (Base)
+    val weight: Float,
+
+    // 2. Opcionales para FÃ³rmula de Grasa (Navy Method)
+    val neck: Float? = null,   // Cuello
+    val waist: Float? = null,  // Cintura (obligatorio para grasa)
+    val hip: Float? = null,    // Cadera (obligatorio para mujeres)
+
+    // 3. Opcionales EstÃ©ticos (Para ver progreso visual)
+    val chest: Float? = null,  // Pecho
+    val biceps: Float? = null, // Brazos
+    val thigh: Float? = null,  // Muslo
+
+    // 4. Datos Calculados
+    val bodyFatPercentage: Float? = null, // % Grasa
+    val leanMass: Float? = null           // Masa magra
+)
+
+// --- JUGADOR ACTUALIZADO ---
+data class PlayerCharacter(
+    // Identidad
+
+    val name: String = "",
+    val gender: String = "Guerrero", // "Guerrero" (H) o "Amazona" (M)
+    val age: Int = 25,
+    val height: Float = 170f,
+    val isCreated: Boolean = false,
+
+    // Estado Actual (Snapshots para acceso rÃ¡pido en la UI)
+    val currentWeight: Float = 70f,
+    val currentBmi: Float = 24.2f,
+    val currentBodyFat: Float? = null, // Nuevo: Grasa actual
+
+    // Stats RPG
+    val level: Int = 1,
+    val currentXp: Int = 0,
+    val maxXp: Int = 100,
+    val strength: Int = 5,
+    val stamina: Int = 5,
+    val agility: Int = 5,
+    val willpower: Int = 5,
+    val luck: Int = 5,
+
+    // Historiales y Listas
+    // AQUÃ EL CAMBIO: Usamos listas de objetos complejos
+    val measurementLogs: List<BodyLog> = emptyList(),
+
+    // Estos los mantenemos simples por ahora (String)
+    val workoutLogs: List<WorkoutLog> = emptyList(),
+    val inventory: List<String> = emptyList(),
+    val currentStreak: Int = 0,      // DÃ­as seguidos (Ej: 5)
+    val lastWorkoutDate: Long = 0L,
+    val activeChallenge: Challenge? = null,
+)
+
+// Clase Item (Objeto del juego)
+data class GameItem(
+    val id: Int,
+    val name: String,
+    val description: String,
+    val type: ItemType,
+    val bonusStat: String,
+    val bonusValue: Int,
+    val price: Int = 0
+)
+
+// Clase MisiÃ³n
+data class Quest(
+    val id: Int,
+    val title: String,
+    val description: String,
+    val xpReward: Int,
+    val statBonus: String,
+    val type: ExerciseType = ExerciseType.REPS,
+    val sets: List<Int> = listOf(10),
+    val restSeconds: Int = 60
+)
+
+data class ExerciseVariant(
+    val name: String,       // Ej: "Flexiones Diamante"
+    val baseDifficulty: Float, // Ej: 1.5x mÃ¡s XP
+    val isTimer: Boolean = false // Si es por tiempo o reps
+)
+
+data class ExerciseFamily(
+    val id: String,         // Ej: "push_family"
+    val stat: String,       // Ej: "STR"
+    val variants: List<ExerciseVariant> // Lista de 5 niveles (Novato -> Leyenda)
+)
+
+data class WorkoutLog(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val timestamp: Long,
+    val questId: Int,       // ID para identificar quÃ© ejercicio fue
+    val questTitle: String, // Guardamos el nombre por si cambia despuÃ©s
+    val totalVolume: Int,   // Reps totales o Segundos totales
+    val xpEarned: Int,      // CuÃ¡nta XP te dio
+    val multiplier: Float   // Si usaste racha (ej: 1.2)
+)
+
+data class Challenge(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val targetWeight: Float,      // Meta (Ej: 75.0 kg)
+    val startWeight: Float,       // Peso inicial (Ej: 80.0 kg)
+    val startDate: Long,          // Fecha inicio (Timestamp)
+    val deadline: Long,           // Fecha fin (Timestamp)
+    val rewardXp: Int = 1000,     // XP por cumplir
+    val description: String,      // Ej: "OperaciÃ³n Verano"
+    val isCompleted: Boolean = false,
+    val isFailed: Boolean = false // Si se acabÃ³ el tiempo
+)
+package com.negocio.warofmen.core.navigation
+
+// Sealed class: Define un conjunto cerrado de opciones. Solo existen estas pantallas.
+sealed class AppScreens(val route: String) {
+    object Creation : AppScreens("creation_screen")
+    object Home : AppScreens("home_screen")
+    object Stats : AppScreens("stats_screen")
+    object Workout : AppScreens("workout_screen")
+    object Charts : AppScreens("charts_screen")
+    object Settings : AppScreens("settings_screen")
+    object Streak : AppScreens("streak_screen")
+    object ChallengeDetail : AppScreens("challenge_detail")
+}
+package com.negocio.warofmen.ui.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.negocio.warofmen.core.util.GameUtils
+import com.negocio.warofmen.data.model.BodyLog
+import com.negocio.warofmen.data.model.Challenge
+import com.negocio.warofmen.data.model.PlayerCharacter
+import com.negocio.warofmen.data.model.Quest
+import com.negocio.warofmen.data.model.WorkoutLog // <--- NUEVO IMPORT
+import com.negocio.warofmen.data.repository.GameRepository
+import com.negocio.warofmen.data.source.QuestProvider
+import com.negocio.warofmen.data.source.MilestoneProvider
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+
+class HomeViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repository = GameRepository(application)
+
+    // Bandera para saber si ya leÃ­mos el DataStore (Pantalla de Carga)
+    private val _isDataLoaded = MutableStateFlow(false)
+    val isDataLoaded: StateFlow<Boolean> = _isDataLoaded.asStateFlow()
+
+    // Estado del Jugador
+    private val _gameState = MutableStateFlow(PlayerCharacter())
+    val gameState: StateFlow<PlayerCharacter> = _gameState.asStateFlow()
+
+    // Lista de Misiones Disponibles
+    private val _quests = MutableStateFlow<List<Quest>>(listOf())
+    val quests: StateFlow<List<Quest>> = _quests.asStateFlow()
+
+    // MisiÃ³n seleccionada para entrenar (Pantalla Naranja)
+    private val _activeQuest = MutableStateFlow<Quest?>(null)
+    val activeQuest: StateFlow<Quest?> = _activeQuest.asStateFlow()
+
+    // Control del DiÃ¡logo de Level Up
+    private val _showLevelUpDialog = MutableStateFlow(false)
+    val showLevelUpDialog: StateFlow<Boolean> = _showLevelUpDialog.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            repository.playerFlow.collectLatest { savedPlayer ->
+                _gameState.value = savedPlayer
+                // Cargamos las misiones adecuadas para el nivel del jugador
+                loadQuests(savedPlayer.level)
+
+                // Avisamos a la UI que los datos estÃ¡n listos
+                _isDataLoaded.value = true
+            }
+        }
+    }
+
+    // ------------------------------------------------------
+    // LÃ“GICA DE ENTRENAMIENTO Y MISIONES
+    // ------------------------------------------------------
+
+    fun selectQuest(quest: Quest) {
+        _activeQuest.value = quest
+    }
+
+    fun clearActiveQuest() {
+        _activeQuest.value = null
+    }
+
+    fun completeQuest(quest: Quest) {
+        val currentPlayer = _gameState.value
+        val context = getApplication<Application>().applicationContext
+
+        // Fecha actual (momento exacto en que termina la misiÃ³n)
+        val now = System.currentTimeMillis()
+
+        // ---------------------------------------------------------
+        // 1. LÃ“GICA DE RACHA (STREAK)
+        // ---------------------------------------------------------
+        var newStreak = currentPlayer.currentStreak
+        val lastDate = currentPlayer.lastWorkoutDate
+
+        if (GameUtils.isToday(lastDate)) {
+            // Ya entrenÃ³ hoy: La racha no cambia (ni sube ni baja)
+        } else if (GameUtils.isYesterday(lastDate) || lastDate == 0L) {
+            // EntrenÃ³ ayer O es su primer entrenamiento histÃ³rico: Sube la racha
+            newStreak += 1
+        } else {
+            // Se saltÃ³ uno o mÃ¡s dÃ­as: La racha se reinicia a 1
+            newStreak = 1
+        }
+
+        // ---------------------------------------------------------
+        // 2. CÃLCULO DE XP CON BONUS (SISTEMA DE RECOMPENSAS)
+        // ---------------------------------------------------------
+        // Consultamos quÃ© multiplicador corresponde a la NUEVA racha
+        val multiplier = MilestoneProvider.getCurrentMultiplier(newStreak)
+
+        // XP Base de la misiÃ³n
+        val baseXp = quest.xpReward
+
+        // Calculamos la XP final aplicando el bonus (convertimos a Int)
+        val xpWithBonus = (baseXp * multiplier).toInt()
+
+        // ---------------------------------------------------------
+        // 3. LÃ“GICA DE NIVEL Y ATRIBUTOS
+        // ---------------------------------------------------------
+        var newXp = currentPlayer.currentXp + xpWithBonus
+        var newLevel = currentPlayer.level
+        var newMaxXp = currentPlayer.maxXp
+
+        // Stats actuales
+        var newStr = currentPlayer.strength
+        var newSta = currentPlayer.stamina
+        var newAgi = currentPlayer.agility
+        var newWil = currentPlayer.willpower
+        var newLuk = currentPlayer.luck
+
+        var leveledUp = false
+
+        // Bucle while por si gana tanta XP que sube 2 niveles de golpe
+        while (newXp >= newMaxXp) {
+            newXp -= newMaxXp // Restamos el costo del nivel
+            newLevel += 1
+            newMaxXp = (newMaxXp * 1.2).toInt() // El siguiente nivel es 20% mÃ¡s difÃ­cil
+
+            // BONUS DE LEVEL UP: Suben todas las estadÃ­sticas +1
+            newStr += 1
+            newSta += 1
+            newAgi += 1
+            newWil += 1
+            // La suerte (LUK) la dejamos igual por ahora
+
+            leveledUp = true
+        }
+
+        // ---------------------------------------------------------
+        // 4. REGISTRO DE HISTORIAL (LOGS)
+        // ---------------------------------------------------------
+        val totalVolume = quest.sets.sum() // Suma total de reps o segundos
+
+        // CAMBIO AQUÃ: Creamos el objeto WorkoutLog en lugar del String antiguo
+        val newLog = WorkoutLog(
+            timestamp = now,
+            questId = quest.id,
+            questTitle = quest.title,
+            totalVolume = totalVolume,
+            xpEarned = xpWithBonus,
+            multiplier = multiplier
+        )
+
+        // Agregamos al inicio de la lista (para que el mÃ¡s reciente salga primero)
+        val newWorkoutLogs = currentPlayer.workoutLogs.toMutableList()
+        newWorkoutLogs.add(0, newLog)
+
+        // ---------------------------------------------------------
+        // 5. FEEDBACK SENSORIAL (VIBRACIÃ“N Y DIÃLOGOS)
+        // ---------------------------------------------------------
+        if (leveledUp) {
+            GameUtils.vibrate(context, "levelup") // VibraciÃ³n Ã©pica
+            _showLevelUpDialog.value = true       // Mostrar popup
+            loadQuests(newLevel)                  // Regenerar misiones mÃ¡s difÃ­ciles
+        } else {
+            GameUtils.vibrate(context, "success") // VibraciÃ³n normal
+        }
+
+        // ---------------------------------------------------------
+        // 6. GUARDADO FINAL (ACTUALIZAR JUGADOR)
+        // ---------------------------------------------------------
+        val updatedPlayer = currentPlayer.copy(
+            // Progreso
+            currentXp = newXp,
+            level = newLevel,
+            maxXp = newMaxXp,
+
+            // Atributos
+            strength = newStr,
+            stamina = newSta,
+            agility = newAgi,
+            willpower = newWil,
+            luck = newLuk,
+
+            // Historiales y Racha
+            workoutLogs = newWorkoutLogs, // Lista actualizada con objetos
+            currentStreak = newStreak,
+            lastWorkoutDate = now
+        )
+
+        updatePlayer(updatedPlayer)
+    }
+
+    // ------------------------------------------------------
+    // LÃ“GICA DE PESO Y BIOMETRÃA
+    // ------------------------------------------------------
+
+    fun updateWeight(newWeight: Float) {
+        val currentPlayer = _gameState.value
+
+        // 1. Recalcular IMC con el nuevo peso
+        val newBmi = GameUtils.calculateBMI(newWeight, currentPlayer.height)
+
+        // 2. Crear registro histÃ³rico complejo (BodyLog)
+        val newLog = BodyLog(
+            timestamp = System.currentTimeMillis(),
+            weight = newWeight,
+            neck = null,
+            waist = null,
+            hip = null,
+            bodyFatPercentage = null
+        )
+
+        // 3. Actualizar la lista de registros
+        val newHistory = currentPlayer.measurementLogs.toMutableList()
+        newHistory.add(newLog)
+        var challenge = currentPlayer.activeChallenge
+        var xpReward = 0
+        var challengeCompleted = false
+
+        if (challenge != null && !challenge.isCompleted && !challenge.isFailed) {
+            // Verificar si cumpliÃ³ (Usamos la misma lÃ³gica: bajar o subir)
+            val isSuccess = if (challenge.startWeight > challenge.targetWeight) {
+                newWeight <= challenge.targetWeight // Bajar: Peso actual menor o igual al target
+            } else {
+                newWeight >= challenge.targetWeight // Subir: Peso actual mayor o igual
+            }
+
+            if (isSuccess) {
+                challenge = challenge.copy(isCompleted = true)
+                xpReward = challenge.rewardXp
+                challengeCompleted = true
+            }
+        }
+
+
+        // 4. Actualizar al jugador
+        val updatedPlayer = currentPlayer.copy(
+            currentWeight = newWeight,
+            currentBmi = newBmi,
+            measurementLogs = newHistory,
+            activeChallenge = challenge,
+            currentXp = currentPlayer.currentXp + xpReward // Sumamos XP si ganÃ³
+        )
+
+        updatePlayer(updatedPlayer)
+    }
+
+    // ------------------------------------------------------
+    // UTILIDADES
+    // ------------------------------------------------------
+
+    fun dismissDialog() {
+        _showLevelUpDialog.value = false
+    }
+
+    private fun updatePlayer(player: PlayerCharacter) {
+        viewModelScope.launch {
+            repository.savePlayer(player)
+        }
+    }
+
+    private fun loadQuests(level: Int) {
+        _quests.value = QuestProvider.getQuestsForLevel(level)
+    }
+
+    fun createChallenge(targetWeight: Float, deadline: Long, description: String) {
+        val currentPlayer = _gameState.value
+        val now = System.currentTimeMillis()
+
+        // Calculamos la duraciÃ³n aproximada solo para dar XP extra (opcional)
+        val diff = deadline - now
+        val days = (diff / (1000 * 60 * 60 * 24)).toInt()
+        val bonusXp = 1000 + (days * 10) // 10 XP extra por dÃ­a de duraciÃ³n
+
+        val newChallenge = Challenge(
+            targetWeight = targetWeight,
+            startWeight = currentPlayer.currentWeight,
+            startDate = now,
+            deadline = deadline, // Usamos la fecha directa del calendario
+            description = description,
+            rewardXp = bonusXp
+        )
+
+        // Guardamos
+        val updatedPlayer = currentPlayer.copy(activeChallenge = newChallenge)
+        updatePlayer(updatedPlayer)
+    }
+
+    fun cancelChallenge() {
+        val currentPlayer = _gameState.value
+        // Al ponerlo en null, el Storage lo borrarÃ¡ automÃ¡ticamente
+        val updatedPlayer = currentPlayer.copy(activeChallenge = null)
+        updatePlayer(updatedPlayer)
+    }
+}
+package com.negocio.warofmen.core.util
+
+object GameConstants {
+    // ConfiguraciÃ³n de Niveles
+    const val XP_MULTIPLIER = 1.2f        // CuÃ¡nto sube la dificultad por nivel (20%)
+    const val BASE_XP_REQ = 100           // XP necesaria para nivel 2
+
+    // ConfiguraciÃ³n de Stats
+    const val BASE_STAT_VALUE = 5         // Valor inicial de atributos
+    const val STAT_POINTS_PER_LEVEL = 1   // CuÃ¡ntos puntos ganas al subir nivel (automÃ¡tico)
+
+    // Recompensas Base
+    const val BASE_QUEST_XP = 20          // XP base por misiÃ³n
+
+    // Tiempos
+    const val DEFAULT_TIMER_SECONDS = 10  // Tiempo base para planchas/wall-sit
+}
+package com.negocio.warofmen.data.source
+
+import android.content.Context
+import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.preferencesDataStore
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.negocio.warofmen.data.model.BodyLog
+import com.negocio.warofmen.data.model.Challenge
+import com.negocio.warofmen.data.model.PlayerCharacter
+import com.negocio.warofmen.data.model.WorkoutLog
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+// Instancia Ãºnica del DataStore
+val Context.dataStore by preferencesDataStore(name = "game_settings_v2")
+
+class GameStorage(private val context: Context) {
+
+    private val gson = Gson()
+
+    companion object {
+        // --- Claves de Identidad ---
+        val NAME_KEY = stringPreferencesKey("user_name")
+        val GENDER_KEY = stringPreferencesKey("user_gender")
+        val AGE_KEY = intPreferencesKey("user_age")
+        val HEIGHT_KEY = floatPreferencesKey("user_height")
+        val IS_CREATED_KEY = booleanPreferencesKey("is_created")
+
+        // --- Claves de Estado FÃ­sico ---
+        val WEIGHT_KEY = floatPreferencesKey("user_current_weight")
+        val BMI_KEY = floatPreferencesKey("user_current_bmi")
+        val BODY_FAT_KEY = floatPreferencesKey("user_current_fat")
+
+        // --- Claves RPG ---
+        val LEVEL_KEY = intPreferencesKey("user_level")
+        val XP_KEY = intPreferencesKey("user_xp")
+        val MAX_XP_KEY = intPreferencesKey("user_max_xp")
+        val STR_KEY = intPreferencesKey("user_str")
+        val STA_KEY = intPreferencesKey("user_sta")
+        val AGI_KEY = intPreferencesKey("user_agi")
+        val WIL_KEY = intPreferencesKey("user_wil")
+        val LUK_KEY = intPreferencesKey("user_luk")
+
+        // --- Claves Complejas (Listas y Objetos JSON) ---
+        val MEASUREMENT_LOGS_KEY = stringPreferencesKey("json_measurement_logs")
+        val WORKOUT_LOGS_JSON_KEY = stringPreferencesKey("json_workout_logs_v2")
+        val ACTIVE_CHALLENGE_JSON_KEY = stringPreferencesKey("json_active_challenge")
+
+        val INVENTORY_KEY = stringSetPreferencesKey("set_inventory")
+
+        // --- Claves de Racha (Streak) ---
+        val STREAK_KEY = intPreferencesKey("user_streak")
+        val LAST_WORKOUT_KEY = longPreferencesKey("user_last_workout")
+
+        // --- Claves de Notificaciones ---
+        val NOTIF_ENABLED_KEY = booleanPreferencesKey("notif_enabled")
+        val NOTIF_HOUR_KEY = intPreferencesKey("notif_hour")
+        val NOTIF_MINUTE_KEY = intPreferencesKey("notif_minute")
+    }
+
+    // -------------------------------------------------------------------------
+    // 1. FLUJO DEL JUGADOR (Lectura Constante)
+    // -------------------------------------------------------------------------
+    val getUserFlow: Flow<PlayerCharacter> = context.dataStore.data
+        .map { preferences ->
+
+            // A. Deserializar historial de peso
+            val jsonMeasurements = preferences[MEASUREMENT_LOGS_KEY]
+            val measurementList: List<BodyLog> = if (jsonMeasurements != null) {
+                val type = object : TypeToken<List<BodyLog>>() {}.type
+                gson.fromJson(jsonMeasurements, type)
+            } else {
+                emptyList()
+            }
+
+            // B. Deserializar historial de entrenamientos
+            val jsonWorkouts = preferences[WORKOUT_LOGS_JSON_KEY]
+            val workoutList: List<WorkoutLog> = if (jsonWorkouts != null) {
+                val type = object : TypeToken<List<WorkoutLog>>() {}.type
+                gson.fromJson(jsonWorkouts, type)
+            } else {
+                emptyList()
+            }
+
+            // C. Deserializar el Reto Activo
+            val jsonChallenge = preferences[ACTIVE_CHALLENGE_JSON_KEY]
+            val activeChallenge: Challenge? = if (jsonChallenge != null) {
+                gson.fromJson(jsonChallenge, Challenge::class.java)
+            } else {
+                null
+            }
+
+            // Construir el objeto PlayerCharacter
+            PlayerCharacter(
+                name = preferences[NAME_KEY] ?: "",
+                gender = preferences[GENDER_KEY] ?: "Guerrero",
+                age = preferences[AGE_KEY] ?: 25,
+                height = preferences[HEIGHT_KEY] ?: 170f,
+                isCreated = preferences[IS_CREATED_KEY] ?: false,
+
+                currentWeight = preferences[WEIGHT_KEY] ?: 70f,
+                currentBmi = preferences[BMI_KEY] ?: 24.2f,
+                currentBodyFat = preferences[BODY_FAT_KEY],
+
+                level = preferences[LEVEL_KEY] ?: 1,
+                currentXp = preferences[XP_KEY] ?: 0,
+                maxXp = preferences[MAX_XP_KEY] ?: 100,
+                strength = preferences[STR_KEY] ?: 5,
+                stamina = preferences[STA_KEY] ?: 5,
+                agility = preferences[AGI_KEY] ?: 5,
+                willpower = preferences[WIL_KEY] ?: 5,
+                luck = preferences[LUK_KEY] ?: 5,
+
+                measurementLogs = measurementList,
+                workoutLogs = workoutList,
+                activeChallenge = activeChallenge,
+
+                inventory = preferences[INVENTORY_KEY]?.toList() ?: emptyList(),
+
+                currentStreak = preferences[STREAK_KEY] ?: 0,
+                lastWorkoutDate = preferences[LAST_WORKOUT_KEY] ?: 0L
+            )
+        }
+
+    // -------------------------------------------------------------------------
+    // 2. GUARDAR JUGADOR
+    // -------------------------------------------------------------------------
+    suspend fun savePlayer(player: PlayerCharacter) {
+        context.dataStore.edit { preferences ->
+            preferences[NAME_KEY] = player.name
+            preferences[GENDER_KEY] = player.gender
+            preferences[AGE_KEY] = player.age
+            preferences[HEIGHT_KEY] = player.height
+            preferences[IS_CREATED_KEY] = player.isCreated
+
+            preferences[WEIGHT_KEY] = player.currentWeight
+            preferences[BMI_KEY] = player.currentBmi
+            if (player.currentBodyFat != null) {
+                preferences[BODY_FAT_KEY] = player.currentBodyFat
+            }
+
+            preferences[LEVEL_KEY] = player.level
+            preferences[XP_KEY] = player.currentXp
+            preferences[MAX_XP_KEY] = player.maxXp
+            preferences[STR_KEY] = player.strength
+            preferences[STA_KEY] = player.stamina
+            preferences[AGI_KEY] = player.agility
+            preferences[WIL_KEY] = player.willpower
+            preferences[LUK_KEY] = player.luck
+
+            // Guardar Historial de Peso (JSON)
+            val jsonMeasurements = gson.toJson(player.measurementLogs)
+            preferences[MEASUREMENT_LOGS_KEY] = jsonMeasurements
+
+            // Guardar Historial de Entrenamientos (JSON)
+            val jsonWorkouts = gson.toJson(player.workoutLogs)
+            preferences[WORKOUT_LOGS_JSON_KEY] = jsonWorkouts
+
+            // Guardar Reto Activo (JSON o borrar si es null)
+            if (player.activeChallenge != null) {
+                val jsonChallenge = gson.toJson(player.activeChallenge)
+                preferences[ACTIVE_CHALLENGE_JSON_KEY] = jsonChallenge
+            } else {
+                preferences.remove(ACTIVE_CHALLENGE_JSON_KEY)
+            }
+
+            preferences[INVENTORY_KEY] = player.inventory.toSet()
+
+            preferences[STREAK_KEY] = player.currentStreak
+            preferences[LAST_WORKOUT_KEY] = player.lastWorkoutDate
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. GESTIÃ“N DE NOTIFICACIONES
+    // -------------------------------------------------------------------------
+
+    // Leer configuraciÃ³n
+    val getNotificationSettings: Flow<NotificationSettings> = context.dataStore.data
+        .map { preferences ->
+            NotificationSettings(
+                isEnabled = preferences[NOTIF_ENABLED_KEY] ?: false,
+                hour = preferences[NOTIF_HOUR_KEY] ?: 18, // Por defecto 18:00
+                minute = preferences[NOTIF_MINUTE_KEY] ?: 0
+            )
+        }
+
+    // Guardar configuraciÃ³n
+    suspend fun saveNotificationSettings(isEnabled: Boolean, hour: Int, minute: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[NOTIF_ENABLED_KEY] = isEnabled
+            preferences[NOTIF_HOUR_KEY] = hour
+            preferences[NOTIF_MINUTE_KEY] = minute
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. RESET TOTAL
+    // -------------------------------------------------------------------------
+    suspend fun clearAllData() {
+        context.dataStore.edit { preferences ->
+            preferences.clear()
+        }
+    }
+}
+
+// Clase de datos auxiliar
+data class NotificationSettings(
+    val isEnabled: Boolean = false,
+    val hour: Int = 18,
+    val minute: Int = 0
+)

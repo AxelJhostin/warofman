@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv \"app/src/main/java/com/negocio\" \"app/src/main/java/com/axeljhostin\")",
+      "Bash(mv \"app/src/androidTest/java/com/negocio\" \"app/src/androidTest/java/com/axeljhostin\")",
+      "Bash(mv \"app/src/test/java/com/negocio\" \"app/src/test/java/com/axeljhostin\")",
+      "Bash(find . -name \"*.kt\" -exec sed -i 's/com\\\\.negocio\\\\.warofmen/com.axeljhostin.warofmen/g' {} +)",
+      "Bash(sed:*)"
+    ]
+  }
+}

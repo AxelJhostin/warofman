@@ -5,13 +5,13 @@ plugins {
 }
 
 android {
-    namespace = "com.negocio.warofmen"
+    namespace = "com.axeljhostin.warofmen"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.negocio.warofmen"
+        applicationId = "com.axeljhostin.warofmen"
         minSdk = 27
         targetSdk = 36
         versionCode = 1
