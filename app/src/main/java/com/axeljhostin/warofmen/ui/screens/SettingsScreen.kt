@@ -181,7 +181,7 @@ fun SettingsScreen(
                 // Reloj Digital (Solo si está activo)
                 if (notifState.isEnabled) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Divider(color = Color.DarkGray.copy(alpha = 0.5f))
+                    HorizontalDivider(color = Color.DarkGray.copy(alpha = 0.5f))
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text("HORA DE SINCRONIZACIÓN", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)

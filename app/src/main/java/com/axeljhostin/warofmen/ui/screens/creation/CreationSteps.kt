@@ -59,7 +59,6 @@ fun StepIdentity(
                     colors = colors,
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
-                        autoCorrect = false,
                         keyboardType = KeyboardType.Text
                     ),
                     singleLine = true
@@ -319,9 +318,12 @@ fun StepSummary(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(nombre.uppercase(), color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp)
-                Text("Nivel 1 • $genero", color = Color.LightGray, fontSize = 14.sp)
+                Text(
+                    "Nivel 1 • ${when (genero) { "H" -> "Guerrero"; "M" -> "Amazona"; else -> genero }}",
+                    color = Color.LightGray, fontSize = 14.sp
+                )
 
-                Divider(color = Color.DarkGray, modifier = Modifier.padding(vertical = 16.dp))
+                HorizontalDivider(color = Color.DarkGray, modifier = Modifier.padding(vertical = 16.dp))
 
                 // SECCIÓN 2: CUERPO
                 Row(verticalAlignment = Alignment.CenterVertically) {

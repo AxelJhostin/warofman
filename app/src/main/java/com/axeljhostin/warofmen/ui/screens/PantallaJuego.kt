@@ -56,6 +56,7 @@ fun PantallaJuego(
     // B. Crear Nuevo Juramento
     if (showChallengeDialog) {
         CreateChallengeDialog(
+            currentWeight = gameState.currentWeight,
             onDismiss = { showChallengeDialog = false },
             onCreate = { target, deadline, desc ->
                 viewModel.createChallenge(target, deadline, desc)
@@ -124,7 +125,11 @@ fun PantallaJuego(
                         letterSpacing = 1.sp
                     )
                     Text(
-                        text = gameState.gender.uppercase(),
+                        text = when (gameState.gender) {
+                            "H" -> "GUERRERO"
+                            "M" -> "AMAZONA"
+                            else -> gameState.gender.uppercase()
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.Gray,
                         letterSpacing = 2.sp

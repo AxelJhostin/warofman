@@ -166,6 +166,7 @@ object GameUtils {
      * Funciona tanto para BAJAR de peso como para SUBIR.
      */
     fun calculateChallengeProgress(start: Float, current: Float, target: Float): Float {
+        if (start == target) return 0f
         // Caso: Bajar de peso (Ej: 80 -> 70)
         if (start > target) {
             val totalToLose = start - target

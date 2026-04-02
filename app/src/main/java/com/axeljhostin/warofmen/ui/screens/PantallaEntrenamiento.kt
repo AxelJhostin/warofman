@@ -34,7 +34,17 @@ fun PantallaEntrenamiento(
     viewModel: HomeViewModel,
     onNavigateBack: () -> Unit
 ) {
-    val quest = viewModel.activeQuest.collectAsState().value ?: return
+    // Limpia activeQuest al salir de esta pantalla por cualquier vía
+    // (botón en pantalla, gesto del sistema, back predictivo)
+    DisposableEffect(Unit) {
+        onDispose { viewModel.clearActiveQuest() }
+    }
+
+    val quest = viewModel.activeQuest.collectAsState().value
+    if (quest == null) {
+        LaunchedEffect(Unit) { onNavigateBack() }
+        return
+    }
 
     // --- ESTADOS DE LA SESIÓN ---
     var currentSetIndex by remember { mutableStateOf(0) }

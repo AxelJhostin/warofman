@@ -215,7 +215,7 @@ fun WizardProgressBar(currentStep: Int, totalSteps: Int) {
         contentAlignment = Alignment.Center
     ) {
         // Línea de fondo (Gris)
-        Divider(
+        HorizontalDivider(
             color = Color.DarkGray,
             thickness = 2.dp,
             modifier = Modifier.fillMaxWidth()

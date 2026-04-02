@@ -238,7 +238,7 @@ fun PantallaDetalleReto(
 
                 // INICIO
                 MilestoneRowDetailed("DESPLIEGUE (INICIO)", GameUtils.formatDate(startDate), startWeight, true, Color.Gray)
-                Divider(color = Color.DarkGray, modifier = Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(color = Color.DarkGray, modifier = Modifier.padding(vertical = 12.dp))
 
                 // GENERAR 9 FASES INTERMEDIAS (10%, 20%... 90%)
                 for (i in 1..9) {
@@ -251,7 +251,7 @@ fun PantallaDetalleReto(
                     val color = if (isPassed) RpgNeonCyan else Color.DarkGray
 
                     MilestoneRowDetailed(phaseName, GameUtils.formatDate(milestoneMillis), milestoneWeight, isPassed, RpgNeonCyan)
-                    Divider(color = Color.DarkGray, modifier = Modifier.padding(vertical = 12.dp))
+                    HorizontalDivider(color = Color.DarkGray, modifier = Modifier.padding(vertical = 12.dp))
                 }
 
                 // FINAL

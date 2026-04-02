@@ -187,6 +187,7 @@ fun EmptyChallengeCard(onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateChallengeDialog(
+    currentWeight: Float,
     onDismiss: () -> Unit,
     onCreate: (target: Float, deadline: Long, desc: String) -> Unit
 ) {
@@ -320,7 +321,7 @@ fun CreateChallengeDialog(
                 onClick = {
                     val target = targetInput.toFloatOrNull()
                     val deadline = selectedDateMillis
-                    if (target != null && deadline != null && deadline > System.currentTimeMillis() && descInput.isNotEmpty()) {
+                    if (target != null && target != currentWeight && deadline != null && deadline > System.currentTimeMillis() && descInput.isNotEmpty()) {
                         onCreate(target, deadline, descInput)
                     }
                 },

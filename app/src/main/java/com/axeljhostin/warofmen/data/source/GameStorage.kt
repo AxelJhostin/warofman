@@ -138,6 +138,8 @@ class GameStorage(private val context: Context) {
             preferences[BMI_KEY] = player.currentBmi
             if (player.currentBodyFat != null) {
                 preferences[BODY_FAT_KEY] = player.currentBodyFat
+            } else {
+                preferences.remove(BODY_FAT_KEY)
             }
 
             preferences[LEVEL_KEY] = player.level

@@ -113,7 +113,7 @@ class MainActivity : ComponentActivity() {
                                                     navController.navigate(AppScreens.Streak.route)
                                                 },
                                                 onOpenChallengeDetail = {
-                                                    navController.navigate("challenge_detail")
+                                                    navController.navigate(AppScreens.ChallengeDetail.route)
                                                 }
                                             )
 
@@ -214,7 +214,7 @@ class MainActivity : ComponentActivity() {
                             }
 
                             // --- RUTA: DETALLE RETO ---
-                            composable("challenge_detail") { // O usa AppScreens.ChallengeDetail.route
+                            composable(AppScreens.ChallengeDetail.route) {
                                 PantallaDetalleReto(
                                     viewModel = homeViewModel,
                                     onBack = { navController.popBackStack() }

@@ -8,7 +8,7 @@ import com.axeljhostin.warofmen.data.model.BodyLog
 import com.axeljhostin.warofmen.data.model.Challenge
 import com.axeljhostin.warofmen.data.model.PlayerCharacter
 import com.axeljhostin.warofmen.data.model.Quest
-import com.axeljhostin.warofmen.data.model.WorkoutLog // <--- NUEVO IMPORT
+import com.axeljhostin.warofmen.data.model.WorkoutLog
 import com.axeljhostin.warofmen.data.repository.GameRepository
 import com.axeljhostin.warofmen.data.source.QuestProvider
 import com.axeljhostin.warofmen.data.source.MilestoneProvider
@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -141,6 +142,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         // CAMBIO AQUÍ: Creamos el objeto WorkoutLog en lugar del String antiguo
         val newLog = WorkoutLog(
+            id = UUID.randomUUID().toString(),
             timestamp = now,
             questId = quest.id,
             questTitle = quest.title,
@@ -272,10 +274,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val bonusXp = 1000 + (days * 10) // 10 XP extra por día de duración
 
         val newChallenge = Challenge(
+            id = UUID.randomUUID().toString(),
             targetWeight = targetWeight,
             startWeight = currentPlayer.currentWeight,
             startDate = now,
-            deadline = deadline, // Usamos la fecha directa del calendario
+            deadline = deadline,
             description = description,
             rewardXp = bonusXp
         )
